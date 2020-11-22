@@ -11,7 +11,11 @@ library(tidyr)
 library(maps)
 library(scales)
 
-setwd("C:/Users/kwsta/Important Docs/MASTER/PLYMOUTH DATA SCIENCE/MATH513 Big Data and Social Network Visualization 20AUSBM/CRW_presentation")
+
+#setting the working directory
+setwd("C:/Users/kwsta/master_projects/Math513/CRW_presentation")
+
+###### NO NEED TO RUN IF THE JSON FILES ARE HERE #######
 # making request to the tweeter API
 my_token <- create_token(
   app = "KTweeter_analysis_app",
@@ -274,27 +278,6 @@ gym_tweets_recoded %>%
 
 
 #####################
-
-### NO
-# search for up to 500 users using the hashtag #homeworkout in their profiles
-users <- search_users("#homeworkout",
-                      n = 500
-)
-#
-#
-# produce a plot showing the user profiles
-#
-users %>% 
-  group_by(screen_name) %>% 
-  arrange(desc(followers_count)) %>% 
-  head(10) %>% 
-  ggplot(aes(reorder(screen_name, followers_count), followers_count, fill = name)) + 
-  geom_col() + 
-  coord_flip() +
-  labs(title='Top Users with #homeworkout On Their Profile', 
-       x="Users", 
-       caption = "Source: Data collected from Twitter's REST API via rtweet") 
-
 #####
 # get tweets from companies employed in fitness sector
 
@@ -312,27 +295,33 @@ tmls %>%
 
 ########
 
-stream_tweets(
-  q = "#homeworkout",
-  timeout = 60, # stream for 60 seconds
-  file_name = "homeworkout_stream.json", # file where the data are saved
-  lang = "en", # tweets written in english
-  parse = FALSE
-)
-#
-## read in the data as a data frame
-homeworkout_stream_tweets <- parse_stream("homeworkout_stream.json")
-# 
-## look at the data
-homeworkout_stream_tweets
-# 
-homeworkout_stream_tweets$text
+# stream_tweets(
+#   q = "#homeworkout",
+#   timeout = 60, # stream for 60 seconds
+#   file_name = "homeworkout_stream.json", # file where the data are saved
+#   lang = "en", # tweets written in english
+#   parse = FALSE
+# )
+# #
+# ## read in the data as a data frame
+# homeworkout_stream_tweets <- parse_stream("homeworkout_stream.json")
+# # 
+# ## look at the data
+# homeworkout_stream_tweets
+# # 
+# homeworkout_stream_tweets$text
 
 
-### Create Maps of Social Media Tweet Locations in R
-###
+### 
+### MAPS
 #
 #
+# create basemap of the globe
+# the theme_map() function cleans up the look of your map.
+world_basemap <- ggplot() +
+  borders("world", colour = "gray85", fill = "gray80") +
+  theme_map()
+world_basemap
 
 ## create variables indicating latitude and longitude using all available 
 ## tweet and profile geo-location data
@@ -355,12 +344,7 @@ hash_gym_tweets_map_s <- data.frame(date_time = hash_gym_tweets_map$created_at,
 
 
 
-# create basemap of the globe
-# the theme_map() function cleans up the look of your map.
-world_basemap <- ggplot() +
-  borders("world", colour = "gray85", fill = "gray80") +
-  theme_map()
-world_basemap
+
 #
 #
 #
@@ -429,14 +413,12 @@ world_basemap +
 hash_homeworkout_tweets$stripped_text <- gsub("http.*","",  hash_homeworkout_tweets$text)
 hash_homeworkout_tweets$stripped_text <- gsub("https.*","", hash_homeworkout_tweets$stripped_text)
 hash_homeworkout_tweets$stripped_text <- gsub("amp","", hash_homeworkout_tweets$stripped_text)
-head(hash_homeworkout_tweets$stripped_text)
 #
 #
 # REMOVE URLS
 hash_gym_tweets$stripped_text <- gsub("http.*","",  hash_gym_tweets$text)
 hash_gym_tweets$stripped_text <- gsub("https.*","", hash_gym_tweets$stripped_text)
 hash_gym_tweets$stripped_text <- gsub("amp","", hash_gym_tweets$stripped_text)
-head(hash_gym_tweets$stripped_text)
 #
 # Then, you can clean up your text. If you are trying to create a list of unique words 
 # in your tweets, words with capitalization will be different from words that are all 
@@ -479,7 +461,7 @@ head(hash_gym_tweets_clean)
 #
 #common words
 # converting the striped text columns to a dataframe so we can use the rbind()
-# then the colnames() is used to set the same column name
+# then the colnames() is used to set the same column name in order to bind the together
 df_stripped_text_home <- as.data.frame(hash_homeworkout_tweets$stripped_text)
 colnames(df_stripped_text_home) <- 'text'
 #
@@ -499,7 +481,7 @@ head(common_words_together_clean)
 # clean stop words
 data("stop_words")
 #
-my_stop_words <- data.frame(word = c("30","gym","homeworkout","home","workout")) # the word 30 appears a lot
+my_stop_words <- data.frame(word = c("30","day")) # the word 30 appears a lot
 #
 #
 hash_homeworkout_tweets_clean  <- hash_homeworkout_tweets_clean %>%
@@ -567,7 +549,6 @@ common_words_together_clean %>%
         axis.title = element_text(size = 16, color = "black"),
         title = element_text(size = 18))
 #
-# find common words
 ##
 ########################################
 #
@@ -584,6 +565,7 @@ hash_gym_tweets_clean_2 <- hash_gym_tweets_clean %>%
   count(word, sort = TRUE) %>% 
   mutate(freq = n / sum(n))
 head(hash_gym_tweets_clean_2)
+#
 #
 #check color paletes
 display.brewer.all()
@@ -608,3 +590,46 @@ wordcloud2(hash_gym_tweets_clean_2)
 #
 #
 #
+bing_home_word_counts <- hash_homeworkout_tweets_clean %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  mutate(word = reorder(word, n))
+#
+bing_gym_word_counts <- hash_gym_tweets_clean %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  mutate(word = reorder(word, n)) 
+#
+# plot top words
+#
+bing_home_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(title = "Most common Positive and Negative words in tweets on #homeworkout",
+       y = "Sentiment",
+       x = NULL) +
+  theme(axis.text = element_text(size = 14, color = "black"), 
+        axis.title = element_text(size = 14, color = "black"),
+        title = element_text(size = 15))
+#
+#
+bing_gym_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(title = "Most common Positive and Negative words in tweets on #gym",
+       y = "Sentiment",
+       x = NULL) +
+  theme(axis.text = element_text(size = 14, color = "black"), 
+        axis.title = element_text(size = 14, color = "black"),
+        title = element_text(size = 15))
+
