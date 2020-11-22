@@ -632,4 +632,30 @@ bing_gym_word_counts %>%
   theme(axis.text = element_text(size = 14, color = "black"), 
         axis.title = element_text(size = 14, color = "black"),
         title = element_text(size = 15))
-
+#
+bing_home_word_counts_m <-bing_home_word_counts %>%
+                            mutate(hash = 'homeworkout')
+bing_home_word_counts_m
+#
+bing_gym_word_counts_m <- bing_gym_word_counts %>%
+                            mutate(hash = 'gym')
+#
+#added together
+#
+bing_together <- rbind(bing_home_word_counts_m, bing_gym_word_counts_m)
+bing_together
+#
+bing_together %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  facet_wrap(hash~sentiment, scales = "free_y") +
+  labs(title = "Most common Positive and Negative words in tweets on #homeworkout vs #gym",
+       y = "Sentiment",
+       x = NULL) +
+  theme(axis.text = element_text(size = 14, color = "black"), 
+        axis.title = element_text(size = 14, color = "black"),
+        title = element_text(size = 15))
