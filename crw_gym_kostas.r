@@ -293,36 +293,11 @@ tmls %>%
   group_by(screen_name) %>%
   select(created_at, screen_name, text) 
 
-########
-
-# stream_tweets(
-#   q = "#homeworkout",
-#   timeout = 60, # stream for 60 seconds
-#   file_name = "homeworkout_stream.json", # file where the data are saved
-#   lang = "en", # tweets written in english
-#   parse = FALSE
-# )
-# #
-# ## read in the data as a data frame
-# homeworkout_stream_tweets <- parse_stream("homeworkout_stream.json")
-# # 
-# ## look at the data
-# homeworkout_stream_tweets
-# # 
-# homeworkout_stream_tweets$text
-
-
+#######
 ### 
 ### MAPS
 #
 #
-# create basemap of the globe
-# the theme_map() function cleans up the look of your map.
-world_basemap <- ggplot() +
-  borders("world", colour = "gray85", fill = "gray80") +
-  theme_map()
-world_basemap
-
 ## create variables indicating latitude and longitude using all available 
 ## tweet and profile geo-location data
 hash_homeworkout_tweets_map <- lat_lng(hash_homeworkout_tweets)
@@ -369,7 +344,6 @@ hash_homeworkout_locations_grp <- hash_homeworkout_locations %>%
   ungroup() 
 hash_homeworkout_locations_grp
 #
-#
 hash_gym_locations_grp <- hash_gym_locations %>%
   mutate(long_round = round(long, 2),
          lat_round = round(lat, 2)) %>%
@@ -378,25 +352,46 @@ hash_gym_locations_grp <- hash_gym_locations %>%
   ungroup() 
 hash_gym_locations_grp
 #
+# binding the hash_homeworkout_locations_grp and hash_gym_locations_grp together so we could plot them easily in the same plot
+hash_homeworkout_locations_grp_m <- hash_homeworkout_locations_grp %>%
+  mutate(hash = 'homeworkout')
+#
+hash_gym_locations_grp_m <- hash_gym_locations_grp %>%
+  mutate(hash = 'gym')
 #
 #
+bind_grp <- rbind(hash_homeworkout_locations_grp_m, hash_gym_locations_grp_m)
+bind_grp
 #
 # Plot tweet data on #homeworkout and #gym grouping close tweets and 
 # using larger points to show higer frequency
+# create basemap of the globe
+# the theme_map() function cleans up the look of your map.
+world_basemap <- ggplot() +
+  borders("world", colour = "gray85", fill = "gray80") +
+  theme_map()
+world_basemap
 # 
+# world_basemap + 
+#   geom_point(data = hash_homeworkout_locations_grp,
+#              aes(long_round, lat_round, size = total_count),
+#              color = "purple", alpha = .5) + 
+#   geom_point(data = hash_gym_locations_grp,
+#              aes(long_round, lat_round, size = total_count),
+#              color = "red", alpha = .5) +
+#   coord_fixed() +
+#   labs(title = "Twitter Activity and locations of #homeworkout vs #gym",
+#        size = "Number of Tweets")
+#
+#
+#
 world_basemap + 
-  geom_point(data = hash_homeworkout_locations_grp,
-             aes(long_round, lat_round, size = total_count),
-             color = "purple", alpha = .5) + 
-  geom_point(data = hash_gym_locations_grp,
-             aes(long_round, lat_round, size = total_count),
-             color = "red", alpha = .5) +
+  geom_point(data = bind_grp,
+             aes(long_round, lat_round, size = total_count, colour = hash),
+              alpha = 0.4) + 
   coord_fixed() +
   labs(title = "Twitter Activity and locations of #homeworkout vs #gym",
        size = "Number of Tweets")
-#
-#
-#
 #
 #
 ##############################################################
