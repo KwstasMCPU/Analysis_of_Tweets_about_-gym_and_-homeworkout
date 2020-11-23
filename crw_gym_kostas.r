@@ -165,23 +165,43 @@ head(gym_tweets$screen_name)
 head(gym_tweets$text)
 plot_top_users(gym_tweets, 'gym', "yellow") 
 plot_top_locations(gym_tweets_recoded, 'homeworkout', "yellow")
-### top users ####
+##
+# grouped plots
+hash_homeworkout_tweets_m <- hash_homeworkout_tweets %>%
+  mutate(tweet = '#homeworkout')
+#
+hash_gym_tweets_m <- hash_gym_tweets %>%
+  mutate(tweet = '#gym')
+#
+binded_tweets <- rbind(hash_homeworkout_tweets_m, hash_gym_tweets_m)
+#
+# binded_tweets %>%
+#       count(screen_name, sort = TRUE) %>%
+#       mutate(screen_name_r = reorder(screen_name, n)) %>%
+#       na.omit() %>%
+#       head(10) %>%
+#       ggplot(aes(x = screen_name_r, y = n))+
+#       geom_col(fill = 'blue') +
+#       coord_flip() +
+#       labs(x = "Twitter userss",
+#            y = "Number of tweets per user.",
+#            title = "Who tweeted the most about") + 
+#       theme(axis.text = element_text(size = 16, color = "black"), 
+#             axis.title = element_text(size = 16, color = "black"),
+#             title = element_text(size = 18)) +
+#       facet_grid(tweet ~ .)
 #####################
 #####
 # get tweets from companies employed in fitness sector
-
-
-tmls <- get_timeline(
-  c("AnytimeFitness", "PureGym"),
-  n = 1000
-)
-
-# See the most recent tweets posted by the gym francises figures
-tmls %>% 
-  arrange(desc(created_at)) %>% 
-  group_by(screen_name) %>%
-  select(created_at, screen_name, text) 
-
+# tmls <- get_timeline(
+#   c("AnytimeFitness", "PureGym"),
+#   n = 1000
+# )
+# # See the most recent tweets posted by the gym francises figures
+# tmls %>% 
+#   arrange(desc(created_at)) %>% 
+#   group_by(screen_name) %>%
+#   select(created_at, screen_name, text) 
 #######
 ### 
 ### MAPS
@@ -243,10 +263,10 @@ hash_gym_locations_grp
 #
 # binding the hash_homeworkout_locations_grp and hash_gym_locations_grp together so we could plot them easily in the same plot
 hash_homeworkout_locations_grp_m <- hash_homeworkout_locations_grp %>%
-  mutate(hash = 'homeworkout')
+  mutate(hash = '#homeworkout')
 #
 hash_gym_locations_grp_m <- hash_gym_locations_grp %>%
-  mutate(hash = 'gym')
+  mutate(hash = '#gym')
 #
 #
 bind_grp <- rbind(hash_homeworkout_locations_grp_m, hash_gym_locations_grp_m)
@@ -280,7 +300,8 @@ world_basemap +
               alpha = 0.4) + 
   coord_fixed() +
   labs(title = "Twitter Activity and locations of #homeworkout vs #gym",
-       size = "Number of Tweets")
+       size = "Number of Tweets",
+       colour = 'Tweet')
 #
 #
 ##############################################################
