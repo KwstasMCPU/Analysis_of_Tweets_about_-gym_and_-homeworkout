@@ -464,7 +464,6 @@ df_stripped_text_gym <- as.data.frame(hash_gym_tweets$stripped_text)
 colnames(df_stripped_text_gym) <- 'text'
 # binding them together
 common_words_together <- rbind(df_stripped_text_home, df_stripped_text_gym)
-View(common_words_together)
 #
 #
 common_words_together_clean <- common_words_together %>%
@@ -655,7 +654,7 @@ bing_together %>%
         axis.title = element_text(size = 14, color = "black"),
         title = element_text(size = 15))
 #
-#
+#, scales = "free_y"
 #
 #
 #############################################
@@ -664,3 +663,5 @@ bing_together %>%
 ###
 ### Calculate sentiment scores for each tweet
 ###
+#
+
