@@ -659,3 +659,13 @@ bing_together %>%
   theme(axis.text = element_text(size = 14, color = "black"), 
         axis.title = element_text(size = 14, color = "black"),
         title = element_text(size = 15))
+#
+#
+#
+#
+#############################################
+#
+#
+###
+### Calculate sentiment scores for each tweet
+###
