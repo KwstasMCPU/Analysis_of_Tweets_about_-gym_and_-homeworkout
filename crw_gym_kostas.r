@@ -67,216 +67,105 @@ head(hash_homeworkout_tweets$screen_name)
 
 # VISUALS countplots
 # top users
-hash_homeworkout_tweets %>% 
-  count(screen_name, sort = TRUE) %>%
-  mutate(screen_name_r = reorder(screen_name, n)) %>%
-  na.omit() %>%
-  head(10) %>%
-  ggplot(aes(x = screen_name_r, y = n))+
-  geom_col(fill = "blue") +
-  coord_flip() +
-  labs(x = "Twitter userss",
-       y = "Number of tweets per user.",
-       title = "Who tweeted the most about #homeworkout") + 
-  theme(axis.text = element_text(size = 16, color = "black"), 
-        axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
+plot_top_users <- function(x, title_end = ' ', fill = "blue") {x %>%
+    count(screen_name, sort = TRUE) %>%
+    mutate(screen_name_r = reorder(screen_name, n)) %>%
+    na.omit() %>%
+    head(10) %>%
+    ggplot(aes(x = screen_name_r, y = n))+
+    geom_col(fill = fill) +
+    coord_flip() +
+    labs(x = "Twitter userss",
+         y = "Number of tweets per user.",
+         title = paste("Who tweeted the most about", title_end, sep = ' ')) + 
+    theme(axis.text = element_text(size = 16, color = "black"), 
+          axis.title = element_text(size = 16, color = "black"),
+          title = element_text(size = 18))
+  }
+  
+plot_top_locations <- function(x, title_end = ' ', fill = 'blue') {x %>%
+    count(location_rec, sort = TRUE) %>%
+    mutate(screen_name_r = reorder(location_rec, n)) %>%
+    na.omit() %>%
+    head(10) %>%
+    ggplot(aes(x = screen_name_r, y = n))+
+    geom_col(fill = fill ) +
+    coord_flip() +
+    labs(x = "Location",
+         y = "Number of tweets",
+         title = paste("Top locations which tweeted:", title_end, sep = ' ')) + 
+    theme(axis.text = element_text(size = 16, color = "black"), 
+          axis.title = element_text(size = 16, color = "black"),
+          title = element_text(size = 18))
+    }
+  
+# joining similar locations
+join_similar_locations <- function(x){x %>%
+    mutate(location_rec = 
+             recode(location, 'United States' = 'USA', 
+                    'US' = 'USA', 'Chicago' = 'Chicago, IL', 
+                    "London, England" = "London", 
+                    "London, UK" = "London", 
+                    "South East, England" = 'United Kingdom',
+                    "UK" = "United Kingdom", "u.k." = "United Kingdom",
+                    "United Kingdom, EU" = "United Kingdom",
+                    "England, United Kingdom" = "United Kingdom",
+                    "united kingdom" = "United Kingdom",
+                    "EU" = "European Union"
+                    )
+           )
+  
+    }
 
-## top locations
+## cleaning data
 # dealing with blank locations
 hash_homeworkout_tweets$location[hash_homeworkout_tweets$location==""] <- NA
+hash_gym_tweets$location[hash_gym_tweets$location==""] <- NA
+homeworkout_tweets$location[homeworkout_tweets$location==""] <- NA
+gym_tweets$location[gym_tweets$location==""] <- NA
+#
 # joining similar locations
-hash_homeworkout_tweets_recoded <- hash_homeworkout_tweets %>% mutate(location_rec = 
-                                              recode(location, 'United States' = 'USA', 
-                                                     'US' = 'USA', 'Chicago' = 'Chicago, IL', 
-                                                     "London, England" = "London", 
-                                                     "London, UK" = "London", 
-                                                     "South East, England" = 'United Kingdom',
-                                                     "UK" = "United Kingdom", "u.k." = "United Kingdom",
-                                                     "United Kingdom, EU" = "United Kingdom",
-                                                     "England, United Kingdom" = "United Kingdom",
-                                                     "united kingdom" = "United Kingdom",
-                                                     "EU" = "European Union"
-                                              ))
-
-hash_homeworkout_tweets_recoded %>% 
-  count(location_rec, sort = TRUE) %>%
-  mutate(screen_name_r = reorder(location_rec, n)) %>%
-  na.omit() %>%
-  head(10) %>%
-  ggplot(aes(x = screen_name_r, y = n))+
-  geom_col(fill = "blue") +
-  coord_flip() +
-  labs(x = "Location",
-       y = "Number of tweets",
-       title = "Where twitter users using '#homeworkout' are from") + 
-  theme(axis.text = element_text(size = 16, color = "black"), 
-        axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
-
-####
-################## for hash_gym_tweets ######################
+#
+hash_homeworkout_tweets_recoded <- join_similar_locations(hash_homeworkout_tweets)
+hash_gym_tweets_recoded <- join_similar_locations(hash_gym_tweets)
+homeworkout_tweets_recoded <- join_similar_locations(homeworkout_tweets)
+gym_tweets_recoded <- join_similar_locations(gym_tweets)
+##
+################## for hash_homeworkout_tweets ######################
+##
+View(hash_homeworkout_tweets)
+names(hash_homeworkout_tweets)
+head(hash_homeworkout_tweets$text)
+head(hash_homeworkout_tweets$screen_name)
+plot_top_users(hash_homeworkout_tweets, '#homeworkout', "red") 
+plot_top_locations(hash_homeworkout_tweets_recoded, '#homeworkout', "red")
+##
+################ for hash_gym_tweets ###############################
+##
 View(hash_gym_tweets)
 names(hash_gym_tweets)
 head(hash_gym_tweets$text)
 head(hash_gym_tweets$screen_name)
-## top users ######
-hash_gym_tweets %>% 
-  count(screen_name, sort = TRUE) %>%
-  mutate(screen_name_r = reorder(screen_name, n)) %>%
-  na.omit() %>%
-  head(10) %>%
-  ggplot(aes(x = screen_name_r, y = n))+
-  geom_col(fill = "blue") +
-  coord_flip() +
-  labs(x = "Twitter users",
-       y = "Number of tweets per user",
-       title = "Who tweeted the most about #gym") + 
-  theme(axis.text = element_text(size = 16, color = "black"), 
-        axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
-
-## top locations ######
-# dealing with blank locations
-hash_gym_tweets$location[hash_gym_tweets$location==""] <- NA
-# joining similar locations
-hash_gym_tweets_recoded <- hash_gym_tweets %>% mutate(location_rec = 
-                                                            recode(location, 'United States' = 'USA', 
-                                                                              'US' = 'USA', 'Chicago' = 'Chicago, IL', 
-                                                                              "London, England" = "London", 
-                                                                              "London, UK" = "London", 
-                                                                              "South East, England" = 'United Kingdom',
-                                                                              "UK" = "United Kingdom", "u.k." = "United Kingdom",
-                                                                              "United Kingdom, EU" = "United Kingdom",
-                                                                              "England, United Kingdom" = "United Kingdom",
-                                                                              "united kingdom" = "United Kingdom",
-                                                                              "EU" = "European Union"
-                                                                        ))
-
-hash_gym_tweets_recoded %>% 
-  count(location_rec, sort = TRUE) %>%
-  mutate(screen_name_r = reorder(location_rec, n)) %>%
-  na.omit() %>%
-  head(10) %>%
-  ggplot(aes(x = screen_name_r, y = n))+
-  geom_col(fill = "blue") +
-  coord_flip() +
-  labs(x = "Location",
-       y = "Number of tweets",
-       title = "Where twitter users using '#gym' are from") + 
-  theme(axis.text = element_text(size = 16, color = "black"), 
-        axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
-
-
+plot_top_users(hash_gym_tweets, '#gym', "blue") 
+plot_top_locations(hash_gym_tweets_recoded, '#gym', "blue")
+##
 ###### for homeworkout_tweets #########
 View(homeworkout_tweets)
 names(homeworkout_tweets)
 head(homeworkout_tweets$text)
 head(homeworkout_tweets$screen_name)
-
-##### top users #######
-homeworkout_tweets %>% 
-  count(screen_name, sort = TRUE) %>%
-  mutate(screen_name_r = reorder(screen_name, n)) %>%
-  na.omit() %>%
-  head(10) %>%
-  ggplot(aes(x = screen_name_r, y = n))+
-  geom_col(fill = "blue") +
-  coord_flip() +
-  labs(x = "Twitter users",
-       y = "Number of tweets per user",
-       title = "Who tweeted the most about 'home workout'") + 
-  theme(axis.text = element_text(size = 16, color = "black"), 
-        axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
-
-## top locations
-# dealing with blank locations
-View(homeworkout_tweets)
-homeworkout_tweets$location[homeworkout_tweets$location==""] <- NA
-# joining similar locations
-homeworkout_tweets_recoded <- homeworkout_tweets %>% mutate(location_rec = 
-                                                        recode(location, 'United States' = 'USA', 
-                                                               'US' = 'USA', 'Chicago' = 'Chicago, IL', 
-                                                               "London, England" = "London", 
-                                                               "London, UK" = "London", 
-                                                               "South East, England" = 'United Kingdom',
-                                                               "UK" = "United Kingdom", "u.k." = "United Kingdom",
-                                                               "United Kingdom, EU" = "United Kingdom",
-                                                               "England, United Kingdom" = "United Kingdom",
-                                                               "united kingdom" = "United Kingdom",
-                                                               "EU" = "European Union"
-                                                        ))
-
-homeworkout_tweets_recoded %>% 
-  count(location_rec, sort = TRUE) %>%
-  mutate(screen_name_r = reorder(location_rec, n)) %>%
-  na.omit() %>%
-  head(10) %>%
-  ggplot(aes(x = screen_name_r, y = n))+
-  geom_col(fill = "blue") +
-  coord_flip() +
-  labs(x = "Location",
-       y = "Number of tweets",
-       title = "Where twitter users using 'home workout' are from") + 
-  theme(axis.text = element_text(size = 16, color = "black"), 
-        axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
-
+plot_top_users(homeworkout_tweets, 'homeworkout', "purple") 
+plot_top_locations(homeworkout_tweets_recoded, 'homeworkout', "purple")
+##
 #### for gym #######
 View(gym_tweets)
 names(gym_tweets)
 head(gym_tweets$text)
 head(gym_tweets$screen_name)
 head(gym_tweets$text)
+plot_top_users(gym_tweets, 'gym', "yellow") 
+plot_top_locations(gym_tweets_recoded, 'homeworkout', "yellow")
 ### top users ####
-gym_tweets %>% 
-  count(screen_name, sort = TRUE) %>%
-  mutate(screen_name_r = reorder(screen_name, n)) %>%
-  na.omit() %>%
-  head(10) %>%
-  ggplot(aes(x = screen_name_r, y = n))+
-  geom_col(fill = "blue") +
-  coord_flip() +
-  labs(x = "Twitter users",
-       y = "Number of tweets per user",
-       title = "Who tweeted the most about 'gym'") + 
-  theme(axis.text = element_text(size = 16, color = "black"), 
-        axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
-
-## top locations
-# dealing with blank locations
-gym_tweets$location[gym_tweets$location==""] <- NA
-# joining similar locations
-gym_tweets_recoded <- gym_tweets %>% mutate(location_rec = 
-                              recode(location, 'United States' = 'USA', 'US' = 'USA', 'Chicago' = 'Chicago, IL', "London, England" = "London", "London, UK" = "London", 
-                                     "UK" = "United Kingdom", "u.k." = "United Kingdom",
-                                     "United Kingdom, EU" = "United Kingdom",
-                                     "England, United Kingdom" = "United Kingdom",
-                                     "united kingdom" = "United Kingdom",
-                                     "EU" = "European Union"
-                              ))
-
-gym_tweets_recoded %>% 
-  count(location_rec, sort = TRUE) %>%
-  mutate(screen_name_r = reorder(location_rec, n)) %>%
-  na.omit() %>%
-  head(10) %>%
-  ggplot(aes(x = screen_name_r, y = n))+
-  geom_col(fill = "blue") +
-  coord_flip() +
-  labs(x = "Location",
-       y = "Number of tweets",
-       title = "Where twitter users using 'gym' are from") + 
-  theme(axis.text = element_text(size = 16, color = "black"), 
-        axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
-
-####
-
-
 #####################
 #####
 # get tweets from companies employed in fitness sector
@@ -664,4 +553,78 @@ bing_together %>%
 ### Calculate sentiment scores for each tweet
 ###
 #
-
+#making a function to create the sentiments
+#
+sentiment_score <- function(x){ x %>%
+    inner_join(get_sentiments("bing")) %>%
+    count(tweetnumber, sentiment) %>%
+    spread(sentiment, n, fill = 0) %>% # negative and positive sentiment in separate columns
+    mutate(score = positive - negative)
+}
+#
+#
+homeworkout_sentiment <- sentiment_score(hash_homeworkout_tweets_clean)
+head(homeworkout_sentiment)
+homeworkout_sentiment %>% count(score)
+#
+gym_sentiment <- sentiment_score(hash_gym_tweets_clean)
+head(homeworkout_sentiment)
+gym_sentiment %>% count(score)
+# Add a variable to indicate the topic
+#
+homeworkout_sentiment <- homeworkout_sentiment %>% 
+  mutate(topic = "#homeworkout")
+#
+gym_sentiment <- gym_sentiment %>% 
+  mutate(topic = "#gym")
+#
+# calculating the score means in order to add them to our plots
+#
+sentiment_mean <- function(x){x %>%
+    summarise((mean_score = mean(score)))
+}
+#
+homeworkout_sentiment_mean <- sentiment_mean(homeworkout_sentiment)
+homeworkout_sentiment_mean
+#
+gym_sentiment_mean <- sentiment_mean(gym_sentiment)
+gym_sentiment_mean
+#
+# combining them together
+sentiments_bind <- rbind(homeworkout_sentiment, gym_sentiment)
+#
+#
+# Work out the means for each topic
+# so that these can be added to the graph for each topic
+# as a line and as a numerical value
+#
+sentiment_means_both <- sentiments_bind %>% 
+  group_by(topic) %>% 
+  summarize(mean_score = mean(score)) 
+sentiment_means_both
+#
+# Perform the plot
+#
+ggplot(sentiments_bind, 
+       aes(x = score, # Sentiment score on x-axis
+           fill = topic)) + # Fill bars with a colour according to the topic
+  geom_bar() + # geom_bar will do the tabulation for you :-)
+  geom_vline(aes(xintercept = mean_score), 
+             data = sentiment_means_both) +
+  # Add a vertical line at the mean scores, calculated and stored in sentiment_mean_both above
+  geom_text(aes(x = mean_score, 
+                y = Inf, 
+                label = signif(mean_score, 3)), #decimal points
+            vjust = 2, 
+            data = sentiment_means_both) + 
+  # Add the mean as a number; vjust moves it down from the top of the plot
+  scale_x_continuous(breaks = -15:15, 
+                     minor_breaks = NULL) + # Show integers; set this to a suitably large range
+  scale_fill_manual(values = c("#homeworkout" = "green", 
+                               "#gym" = "blue")) + # Specify your own colours
+  labs(x = "Sentiment Score" , 
+       y = "Number of tweets", 
+       fill = "Topic") +
+  facet_grid(topic ~ .) + # One row for each page
+  theme(legend.position = "bottom") # Legend on the bottom
+#
