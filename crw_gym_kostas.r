@@ -85,10 +85,10 @@ plot_top_users <- function(x, title_end = ' ', fill = "blue") {x %>%
   
 plot_top_locations <- function(x, title_end = ' ', fill = 'blue') {x %>%
     count(location_rec, sort = TRUE) %>%
-    mutate(screen_name_r = reorder(location_rec, n)) %>%
+    mutate(location_rec = reorder(location_rec, n)) %>%
     na.omit() %>%
     head(10) %>%
-    ggplot(aes(x = screen_name_r, y = n))+
+    ggplot(aes(x = location_rec, y = n))+
     geom_col(fill = fill ) +
     coord_flip() +
     labs(x = "Location",
@@ -164,32 +164,40 @@ head(gym_tweets$text)
 head(gym_tweets$screen_name)
 head(gym_tweets$text)
 plot_top_users(gym_tweets, 'gym', "yellow") 
-plot_top_locations(gym_tweets_recoded, 'homeworkout', "yellow")
+plot_top_locations(gym_tweets_recoded, 'gym', "yellow")
 ##
 # grouped plots
-hash_homeworkout_tweets_m <- hash_homeworkout_tweets %>%
+hash_homeworkout_tweets_m <- hash_homeworkout_tweets_recoded %>%
   mutate(tweet = '#homeworkout')
 #
-hash_gym_tweets_m <- hash_gym_tweets %>%
+hash_gym_tweets_m <- hash_gym_tweets_recoded %>%
   mutate(tweet = '#gym')
 #
+hash_homeworkout_tweets_recoded$location_rec
+names(binded_tweets)
+binded_tweets$location
 binded_tweets <- rbind(hash_homeworkout_tweets_m, hash_gym_tweets_m)
-#
-# binded_tweets %>%
-#       count(screen_name, sort = TRUE) %>%
-#       mutate(screen_name_r = reorder(screen_name, n)) %>%
-#       na.omit() %>%
-#       head(10) %>%
-#       ggplot(aes(x = screen_name_r, y = n))+
-#       geom_col(fill = 'blue') +
-#       coord_flip() +
-#       labs(x = "Twitter userss",
-#            y = "Number of tweets per user.",
-#            title = "Who tweeted the most about") + 
-#       theme(axis.text = element_text(size = 16, color = "black"), 
-#             axis.title = element_text(size = 16, color = "black"),
-#             title = element_text(size = 18)) +
-#       facet_grid(tweet ~ .)
+binded_tweets_r <- join_similar_locations(binded_tweets)
+
+binded_tweets_r %>%
+  select(tweet, location_rec) %>%
+  group_by(tweet) %>%
+  count(location_rec) %>%
+  na.omit() %>%
+  arrange(desc(n)) %>%
+  slice_head(n = 5) %>%
+  
+  ggplot(aes(x = location_rec,y = n)) +
+  geom_col(fill = 'blue') +
+  coord_flip() +
+  labs(x = "Top Locations",
+       y = "Frequency",
+       title = "top locations of #gym and #homeworkout") +
+  theme(axis.text = element_text(size = 16, color = "black"),
+        axis.title = element_text(size = 16, color = "black"),
+        title = element_text(size = 18)) +
+  facet_grid(tweet~ ., scales ='free')
+
 #####################
 #####
 # get tweets from companies employed in fitness sector
@@ -385,7 +393,7 @@ head(common_words_together_clean)
 # clean stop words
 data("stop_words")
 #
-my_stop_words <- data.frame(word = c("30","day")) # the word 30 appears a lot
+my_stop_words <- data.frame(word = c("30","day",'gym','homeworkout', 'home', 'workout')) # the word 30 appears a lot
 #
 #
 hash_homeworkout_tweets_clean  <- hash_homeworkout_tweets_clean %>%
@@ -409,6 +417,40 @@ common_words_together_clean <- common_words_together_clean %>%
   anti_join(my_stop_words)
 #
 # plotting the top 10 words
+#
+hash_homeworkout_tweets_clean_m <- hash_homeworkout_tweets_clean %>% 
+  mutate(topic = "#homeworkout")
+#
+hash_gym_tweets_clean_m <- hash_gym_tweets_clean %>% 
+  mutate(topic = "#gym")
+#
+binded_clean <- rbind(hash_homeworkout_tweets_clean_m, hash_gym_tweets_clean_m)
+
+binded_clean <- binded_clean %>%
+  group_by(topic) %>%
+  count(word, sort = TRUE) #%>% # count of number of occurrences of each word and sort according to count
+  
+  #mutate(word = reorder(word, n))
+
+binded_clean
+         
+binded_clean %>%
+  group_by(topic) %>%
+  #count(word, sort = TRUE) %>% # count of number of occurrences of each word and sort according to count
+  slice_max(n, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col(fill = "pink", color = "red") +
+  coord_flip() +
+  labs(x = "Unique Words",
+       y = "Frequency",
+       title = "Count of unique words found in tweets with #homeworkout") + 
+  theme(axis.text = element_text(size = 16, color = "black"), 
+        axis.title = element_text(size = 16, color = "black"),
+        title = element_text(size = 18)) +
+  facet_grid(topic~.)
+
 hash_homeworkout_tweets_clean %>%
   count(word, sort = TRUE) %>% # count of number of occurrences of each word and sort according to count
   head(10) %>% # extract top 10 words
@@ -590,6 +632,7 @@ homeworkout_sentiment %>% count(score)
 #
 gym_sentiment <- sentiment_score(hash_gym_tweets_clean)
 head(homeworkout_sentiment)
+
 gym_sentiment %>% count(score)
 # Add a variable to indicate the topic
 #
@@ -649,3 +692,26 @@ ggplot(sentiments_bind,
   facet_grid(topic ~ .) + # One row for each page
   theme(legend.position = "bottom") # Legend on the bottom
 #
+# 
+# summary statistics
+#
+#
+sentiments_bind %>%
+  group_by(topic) %>%
+  summarise(mean_score = mean(score), 
+            variance_score = var(score),
+            sd_score = sd(score),
+            IQR_score = IQR(score))
+
+
+# when the two groups of samples (A and B), being compared, 
+# are normally distributed. This can be checked using Shapiro-Wilk test.
+# and when the variances of the two groups are equal. This can be checked using F-test.
+library("ggpubr")
+
+ggplot(sentiments_bind, aes(x = topic, y = score, fill = topic)) + 
+  geom_boxplot(varwidth = TRUE) +
+  labs(x = "Hashtag", y = "Sentiment Score") 
+
+t.test(score ~ topic, data = sentiments_bind, var.equal = TRUE)
+t.test(score ~ topic, data = sentiments_bind, var.equal = TRUE)$p.value
