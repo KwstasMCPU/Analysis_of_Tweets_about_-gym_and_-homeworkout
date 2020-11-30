@@ -10,11 +10,10 @@ library(wordcloud2)
 library(tidyr)
 library(maps)
 library(scales)
-
-
+#
 #setting the working directory
 setwd("C:/Users/kwsta/master_projects/Math513/CRW_presentation")
-
+#
 ###### NO NEED TO RUN IF THE JSON FILES ARE HERE #######
 # making request to the tweeter API
 my_token <- create_token(
@@ -24,7 +23,7 @@ my_token <- create_token(
   access_token = "1315266158052990977-uWAIGpx2rlbGPyuICYwmGrj1UtO7Vc",
   access_secret = "7JVOj6aVqvWy2lC6ehN7VHHrmB5RwFsr0Xopmtd6ABRQO")
 ###########
-
+#
 ########## 
 # we filter our search to receive tweets only with English language,  
 # also we excluded the re-tweets in order to minimize bias,
@@ -40,14 +39,12 @@ homeworkout_tweets <- search_tweets(q = "home workout OR homeworkout",
 
 gym_tweets <- search_tweets(q = "gym",
                             n = 1000, lang = "en", include_rts = FALSE)
-
+#
 ########## THIS WILL REWRITE THE JSON FILES ########################################
 ## As before, these tweets can be saved for future use, for example, as a json file
 hash_homeworkout_tweets %>% toJSON() %>% write_lines("hash_homeworkout_tweets.json")
 hash_gym_tweets %>% toJSON() %>% write_lines("hash_gym_tweets.json")
-homeworkout_tweets %>% toJSON() %>% write_lines("homeworkout_tweets.json")
-gym_tweets %>% toJSON() %>% write_lines("gym_tweets.json")
-
+#
 ######### RUN ONLY IF U WANT TO LOAD FROM THE JSON FILE!!!!!############################
 # makes a dataframe out of a json file
 # Read in the data
@@ -55,18 +52,17 @@ library(jsonlite)
 #df <- fromJSON(temp) %>% as.data.frame
 hash_homeworkout_tweets <- stream_in(file("hash_homeworkout_tweets.json"))
 hash_gym_tweets <- stream_in(file("hash_gym_tweets.json"))
-homeworkout_tweets <- stream_in(file("homeworkout_tweets.json"))
-gym_tweets <- stream_in(file("gym_tweets.json"))
-
+#
 # inspect some tweets
 ####### for hash_homeworkout_tweets##########
 View(hash_homeworkout_tweets)
 names(hash_homeworkout_tweets)
 head(hash_homeworkout_tweets$text)
 head(hash_homeworkout_tweets$screen_name)
-
+#
 # VISUALS countplots
-# top users
+# Top users
+#
 plot_top_users <- function(x, title_end = ' ', fill = "blue") {x %>%
     count(screen_name, sort = TRUE) %>%
     mutate(screen_name_r = reorder(screen_name, n)) %>%
@@ -82,7 +78,9 @@ plot_top_users <- function(x, title_end = ' ', fill = "blue") {x %>%
           axis.title = element_text(size = 16, color = "black"),
           title = element_text(size = 18))
   }
-  
+#  
+# Top locations
+#
 plot_top_locations <- function(x, title_end = ' ', fill = 'blue') {x %>%
     count(location_rec, sort = TRUE) %>%
     mutate(location_rec = reorder(location_rec, n)) %>%
@@ -98,7 +96,7 @@ plot_top_locations <- function(x, title_end = ' ', fill = 'blue') {x %>%
           axis.title = element_text(size = 16, color = "black"),
           title = element_text(size = 18))
     }
-  
+#  
 # joining similar locations
 join_similar_locations <- function(x){x %>%
     mutate(location_rec = 
@@ -116,20 +114,18 @@ join_similar_locations <- function(x){x %>%
            )
   
     }
-
+#
 ## cleaning data
 # dealing with blank locations
 hash_homeworkout_tweets$location[hash_homeworkout_tweets$location==""] <- NA
 hash_gym_tweets$location[hash_gym_tweets$location==""] <- NA
-homeworkout_tweets$location[homeworkout_tweets$location==""] <- NA
-gym_tweets$location[gym_tweets$location==""] <- NA
+# to deal the the "Nothing just happens." location
+hash_gym_tweets$location[hash_gym_tweets$location=="Nothing just happens."] <- NA
 #
 # joining similar locations
 #
 hash_homeworkout_tweets_recoded <- join_similar_locations(hash_homeworkout_tweets)
 hash_gym_tweets_recoded <- join_similar_locations(hash_gym_tweets)
-homeworkout_tweets_recoded <- join_similar_locations(homeworkout_tweets)
-gym_tweets_recoded <- join_similar_locations(gym_tweets)
 ##
 ################## for hash_homeworkout_tweets ######################
 ##
@@ -137,8 +133,8 @@ View(hash_homeworkout_tweets)
 names(hash_homeworkout_tweets)
 head(hash_homeworkout_tweets$text)
 head(hash_homeworkout_tweets$screen_name)
-plot_top_users(hash_homeworkout_tweets, '#homeworkout', "red") 
-plot_top_locations(hash_homeworkout_tweets_recoded, '#homeworkout', "red")
+plot_top_users(hash_homeworkout_tweets, '#homeworkout', "tomato") 
+plot_top_locations(hash_homeworkout_tweets_recoded, '#homeworkout', "tomato")
 ##
 ################ for hash_gym_tweets ###############################
 ##
@@ -146,39 +142,25 @@ View(hash_gym_tweets)
 names(hash_gym_tweets)
 head(hash_gym_tweets$text)
 head(hash_gym_tweets$screen_name)
-plot_top_users(hash_gym_tweets, '#gym', "blue") 
-plot_top_locations(hash_gym_tweets_recoded, '#gym', "blue")
+plot_top_users(hash_gym_tweets, '#gym', "steelblue") 
+plot_top_locations(hash_gym_tweets_recoded, '#gym', "steelblue")
 ##
-###### for homeworkout_tweets #########
-View(homeworkout_tweets)
-names(homeworkout_tweets)
-head(homeworkout_tweets$text)
-head(homeworkout_tweets$screen_name)
-plot_top_users(homeworkout_tweets, 'homeworkout', "purple") 
-plot_top_locations(homeworkout_tweets_recoded, 'homeworkout', "purple")
-##
-#### for gym #######
-View(gym_tweets)
-names(gym_tweets)
-head(gym_tweets$text)
-head(gym_tweets$screen_name)
-head(gym_tweets$text)
-plot_top_users(gym_tweets, 'gym', "yellow") 
-plot_top_locations(gym_tweets_recoded, 'gym', "yellow")
-##
+#####
 # grouped plots
+## we bind the "hash_homeworkout_tweets" and "hash_gym_tweets" in order to create a facet_grid
+# firstly we use mutate in order to create a column called tweet so we can 
+# group_by them using their particular value (#homeworktout and #gym)
 hash_homeworkout_tweets_m <- hash_homeworkout_tweets_recoded %>%
   mutate(tweet = '#homeworkout')
 #
 hash_gym_tweets_m <- hash_gym_tweets_recoded %>%
   mutate(tweet = '#gym')
 #
-hash_homeworkout_tweets_recoded$location_rec
-names(binded_tweets)
-binded_tweets$location
+# use rbind() to bind the together
 binded_tweets <- rbind(hash_homeworkout_tweets_m, hash_gym_tweets_m)
+# use the join_similar_locations function we made
 binded_tweets_r <- join_similar_locations(binded_tweets)
-
+#
 binded_tweets_r %>%
   select(tweet, location_rec) %>%
   group_by(tweet) %>%
@@ -186,20 +168,24 @@ binded_tweets_r %>%
   na.omit() %>%
   arrange(desc(n)) %>%
   slice_head(n = 5) %>%
-  
-  ggplot(aes(x = location_rec,y = n)) +
-  geom_col(fill = 'blue') +
+  ggplot(aes(x = location_rec,y = n, fill = tweet)) +
+  geom_col() +
   coord_flip() +
   labs(x = "Top Locations",
        y = "Frequency",
-       title = "top locations of #gym and #homeworkout") +
+       title = "Top locations of #gym and #homeworkout",
+       caption = 'Data Source: Twitter (derived using rtweet)') +
   theme(axis.text = element_text(size = 16, color = "black"),
         axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18)) +
+        plot.title = element_text(size = 18, face = 'bold'),
+        legend.title = element_text(size = 16, face = 'bold'),
+        plot.caption = element_text(size = 11, face = 'italic')) +
+  scale_fill_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue")) +
   facet_grid(tweet~ ., scales ='free')
-
+#
 #####################
-#####
+#
 # get tweets from companies employed in fitness sector
 # tmls <- get_timeline(
 #   c("AnytimeFitness", "PureGym"),
@@ -210,9 +196,8 @@ binded_tweets_r %>%
 #   arrange(desc(created_at)) %>% 
 #   group_by(screen_name) %>%
 #   select(created_at, screen_name, text) 
-#######
-### 
-### MAPS
+#
+### MAPS #################
 #
 #
 ## create variables indicating latitude and longitude using all available 
@@ -223,10 +208,10 @@ hash_gym_tweets_map <- lat_lng(hash_gym_tweets)
 # create new data frame with just the tweet texts, usernames and location data
 #homeworkout
 hash_homeworkout_tweets_map_s <- data.frame(date_time = hash_homeworkout_tweets_map$created_at,
-                       username = hash_homeworkout_tweets_map$screen_name,
-                       tweet_text = hash_homeworkout_tweets_map$text,
-                       long = hash_homeworkout_tweets_map$lng,
-                       lat = hash_homeworkout_tweets_map$lat)
+                                            username = hash_homeworkout_tweets_map$screen_name,
+                                            tweet_text = hash_homeworkout_tweets_map$text,
+                                            long = hash_homeworkout_tweets_map$lng,
+                                            lat = hash_homeworkout_tweets_map$lat)
 #gym
 hash_gym_tweets_map_s <- data.frame(date_time = hash_gym_tweets_map$created_at,
                                             username = hash_gym_tweets_map$screen_name,
@@ -234,21 +219,16 @@ hash_gym_tweets_map_s <- data.frame(date_time = hash_gym_tweets_map$created_at,
                                             long = hash_gym_tweets_map$lng,
                                             lat = hash_gym_tweets_map$lat)
 
-
-
-
 #
 #
 #
 # remove na values
 hash_homeworkout_locations  <- hash_homeworkout_tweets_map_s %>%
   na.omit()
-head(hash_homeworkout_locations)
 #
 #
 hash_gym_locations  <- hash_gym_tweets_map_s %>%
   na.omit()
-head(hash_gym_locations)
 #
 #
 # 
@@ -259,7 +239,6 @@ hash_homeworkout_locations_grp <- hash_homeworkout_locations %>%
   group_by(long_round, lat_round) %>%
   summarise(total_count = n()) %>%
   ungroup() 
-hash_homeworkout_locations_grp
 #
 hash_gym_locations_grp <- hash_gym_locations %>%
   mutate(long_round = round(long, 2),
@@ -267,9 +246,9 @@ hash_gym_locations_grp <- hash_gym_locations %>%
   group_by(long_round, lat_round) %>%
   summarise(total_count = n()) %>%
   ungroup() 
-hash_gym_locations_grp
 #
-# binding the hash_homeworkout_locations_grp and hash_gym_locations_grp together so we could plot them easily in the same plot
+# binding the hash_homeworkout_locations_grp and hash_gym_locations_grp together 
+# so we could plot them easily in the same plot
 hash_homeworkout_locations_grp_m <- hash_homeworkout_locations_grp %>%
   mutate(hash = '#homeworkout')
 #
@@ -277,8 +256,7 @@ hash_gym_locations_grp_m <- hash_gym_locations_grp %>%
   mutate(hash = '#gym')
 #
 #
-bind_grp <- rbind(hash_homeworkout_locations_grp_m, hash_gym_locations_grp_m)
-bind_grp
+bind_location_grp <- rbind(hash_homeworkout_locations_grp_m, hash_gym_locations_grp_m)
 #
 # Plot tweet data on #homeworkout and #gym grouping close tweets and 
 # using larger points to show higer frequency
@@ -287,29 +265,27 @@ bind_grp
 world_basemap <- ggplot() +
   borders("world", colour = "gray85", fill = "gray80") +
   theme_map()
-world_basemap
 # 
-# world_basemap + 
-#   geom_point(data = hash_homeworkout_locations_grp,
-#              aes(long_round, lat_round, size = total_count),
-#              color = "purple", alpha = .5) + 
-#   geom_point(data = hash_gym_locations_grp,
-#              aes(long_round, lat_round, size = total_count),
-#              color = "red", alpha = .5) +
-#   coord_fixed() +
-#   labs(title = "Twitter Activity and locations of #homeworkout vs #gym",
-#        size = "Number of Tweets")
-#
-#
 #
 world_basemap + 
-  geom_point(data = bind_grp,
+  geom_point(data = bind_location_grp,
              aes(long_round, lat_round, size = total_count, colour = hash),
               alpha = 0.4) + 
   coord_fixed() +
   labs(title = "Twitter Activity and locations of #homeworkout vs #gym",
        size = "Number of Tweets",
-       colour = 'Tweet')
+       colour = 'Tweet',
+       caption = 'Data Source: Twitter (derived using rtweet)') +
+  theme(
+    plot.title = element_text(size=22),
+    plot.caption = element_text(size=11, face = 'italic'),
+    legend.background = element_rect(colour = "black"),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 13),
+    legend.key.size = unit(1, "lines")  
+  ) +
+  scale_color_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue"))
 #
 #
 ##############################################################
@@ -364,13 +340,11 @@ hash_homeworkout_tweets_clean <- hash_homeworkout_tweets %>%
   select(stripped_text) %>% 
   mutate(tweetnumber = row_number()) %>% # create new variable denoting the tweet number
   unnest_tokens(word, stripped_text)
-head(hash_homeworkout_tweets_clean)
 #
 hash_gym_tweets_clean <- hash_gym_tweets %>%
   select(stripped_text) %>% 
   mutate(tweetnumber = row_number()) %>% # create new variable denoting the tweet number
   unnest_tokens(word, stripped_text)
-head(hash_gym_tweets_clean)
 #
 #common words
 # converting the striped text columns to a dataframe so we can use the rbind()
@@ -390,7 +364,7 @@ common_words_together_clean <- common_words_together %>%
   unnest_tokens(word, text)
 head(common_words_together_clean)
 #
-# clean stop words
+## clean stop words
 data("stop_words")
 #
 my_stop_words <- data.frame(word = c("30","day",'gym','homeworkout', 'home', 'workout')) # the word 30 appears a lot
@@ -425,38 +399,37 @@ hash_gym_tweets_clean_m <- hash_gym_tweets_clean %>%
   mutate(topic = "#gym")
 #
 binded_clean <- rbind(hash_homeworkout_tweets_clean_m, hash_gym_tweets_clean_m)
-
-binded_clean <- binded_clean %>%
-  group_by(topic) %>%
-  count(word, sort = TRUE) #%>% # count of number of occurrences of each word and sort according to count
-  
-  #mutate(word = reorder(word, n))
-
 binded_clean
-         
+#
 binded_clean %>%
   group_by(topic) %>%
-  #count(word, sort = TRUE) %>% # count of number of occurrences of each word and sort according to count
-  slice_max(n, n = 10, with_ties = FALSE) %>%
-  ungroup() %>%
-  mutate(word = reorder(word, n)) %>%
-  ggplot(aes(x = word, y = n)) +
-  geom_col(fill = "pink", color = "red") +
+  count(word) %>%
+  arrange(desc(n)) %>%
+  slice_head(n = 10) %>%
+  ggplot(aes(x = word, y = n, fill = topic)) +
+  geom_col() +
   coord_flip() +
   labs(x = "Unique Words",
        y = "Frequency",
-       title = "Count of unique words found in tweets with #homeworkout") + 
-  theme(axis.text = element_text(size = 16, color = "black"), 
+       fill = 'Tweet',
+       caption = 'Data Source: Twitter (derived using rtweet)',
+       title = "Count of unique words found in tweets with\n #homeworkout and #gym") + 
+  theme(axis.text = element_text(size = 16, color = "black"),
         axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18)) +
-  facet_grid(topic~.)
+        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"),
+        legend.title = element_text(size = 16, face = 'bold')) +
+  scale_fill_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue")) +
+  facet_grid(topic~., scales ='free') 
+
 
 hash_homeworkout_tweets_clean %>%
   count(word, sort = TRUE) %>% # count of number of occurrences of each word and sort according to count
   head(10) %>% # extract top 10 words
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(x = word, y = n)) +
-  geom_col(fill = "pink", color = "red") +
+  geom_col(fill = "tomato") +
   coord_flip() +
   labs(x = "Unique Words",
        y = "Frequency",
@@ -471,7 +444,7 @@ hash_gym_tweets_clean %>%
   head(10) %>% # extract top 10 words
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(x = word, y = n)) +
-  geom_col(fill = "pink", color = "red") +
+  geom_col(fill = "steelblue") +
   coord_flip() +
   labs(x = "Unique Words",
        y = "Frequency",
