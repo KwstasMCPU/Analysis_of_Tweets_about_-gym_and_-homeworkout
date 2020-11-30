@@ -579,13 +579,13 @@ bing_together %>%
   group_by(sentiment, hash) %>%
   arrange(desc(n)) %>%
   slice_head(n = 5) %>%
-  ggplot(aes(word, n, fill = sentiment)) +
+  ggplot(aes(word, n, fill = sentiment, color = hash)) +
   geom_col(show.legend = FALSE) +
   coord_flip() +
   labs(title = "Most common Positive and Negative words\nin tweets on #homeworkout vs #gym",
        caption = 'Data Source: Twitter (derived using rtweet)',
-       y = "Sentiment",
-       x = NULL) +
+       y = "Sentiment score",
+       x = NULL ) +
   theme(axis.text = element_text(size = 16, color = "black"),
         axis.title = element_text(size = 16, color = "black"),
         plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
@@ -593,7 +593,9 @@ bing_together %>%
         legend.title = element_text(size = 16, face = 'bold')) +
   facet_wrap(hash ~ sentiment, scales = 'free_y') +
   scale_fill_manual(values = c("positive" = "blue", 
-                             "negative" = "red"))
+                             "negative" = "red",
+                             "#gym" = "bluesteel",
+                             "#homeworkout" = "tomato"))
 #
 #
 #############################################
@@ -671,13 +673,21 @@ ggplot(sentiments_bind,
   # Add the mean as a number; vjust moves it down from the top of the plot
   scale_x_continuous(breaks = -15:15, 
                      minor_breaks = NULL) + # Show integers; set this to a suitably large range
-  scale_fill_manual(values = c("#homeworkout" = "green", 
-                               "#gym" = "blue")) + # Specify your own colours
+  scale_fill_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue")) + # Specify your own colours
   labs(x = "Sentiment Score" , 
        y = "Number of tweets", 
-       fill = "Topic") +
+       fill = "Tweet",
+       title = "Distribution of sentiment scores for #homeworkout and #gym",
+       caption = 'Data Source: Twitter (derived using rtweet)') +
   facet_grid(topic ~ .) + # One row for each page
-  theme(legend.position = "bottom") # Legend on the bottom
+  theme(legend.position = "bottom",  # Legend on the bottom
+        legend.text = element_text(size = 11),
+        axis.text = element_text(size = 16, color = "black"),
+        axis.title = element_text(size = 16, color = "black"),
+        plot.title = element_text(size = 17, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"),
+        legend.title = element_text(size = 16, face = 'bold'))
 #
 # 
 # summary statistics
@@ -698,7 +708,19 @@ library("ggpubr")
 
 ggplot(sentiments_bind, aes(x = topic, y = score, fill = topic)) + 
   geom_boxplot(varwidth = TRUE) +
-  labs(x = "Hashtag", y = "Sentiment Score") 
+  labs(title = "Box plots of sentiment scores",
+       x = NULL, 
+       y = "Sentiment Score",
+       fill = 'Tweet',
+       caption = 'Data Source: Twitter (derived using rtweet)') +
+  scale_fill_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue")) +
+  theme(legend.text = element_text(size = 11),
+        axis.text = element_text(size = 16, color = "black"),
+        axis.title = element_text(size = 16, color = "black"),
+        plot.title = element_text(size = 17, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"),
+        legend.title = element_text(size = 16, face = 'bold'))
 
 t.test(score ~ topic, data = sentiments_bind, var.equal = TRUE)
 t.test(score ~ topic, data = sentiments_bind, var.equal = TRUE)$p.value
