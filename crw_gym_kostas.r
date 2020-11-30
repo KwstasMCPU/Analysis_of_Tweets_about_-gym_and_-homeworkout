@@ -414,7 +414,7 @@ binded_clean %>%
        y = "Frequency",
        fill = 'Tweet',
        caption = 'Data Source: Twitter (derived using rtweet)',
-       title = "Count of unique words found in tweets with\n #homeworkout and #gym") + 
+       title = "Count of unique words found in tweets with\n#homeworkout and #gym") + 
   theme(axis.text = element_text(size = 16, color = "black"),
         axis.title = element_text(size = 16, color = "black"),
         plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
@@ -433,10 +433,13 @@ hash_homeworkout_tweets_clean %>%
   coord_flip() +
   labs(x = "Unique Words",
        y = "Frequency",
+       caption = 'Data Source: Twitter (derived using rtweet)',
        title = "Count of unique words found in tweets with #homeworkout") + 
   theme(axis.text = element_text(size = 16, color = "black"), 
         axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
+        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"),
+        legend.title = element_text(size = 16, face = 'bold'))
 #
 hash_gym_tweets_clean %>%
   count(word, sort = TRUE) %>% # count of number of occurrences of each word and sort according to count
@@ -447,10 +450,13 @@ hash_gym_tweets_clean %>%
   coord_flip() +
   labs(x = "Unique Words",
        y = "Frequency",
+       caption = 'Data Source: Twitter (derived using rtweet)',
        title = "Count of unique words found in tweets with #gym") + 
   theme(axis.text = element_text(size = 16, color = "black"), 
         axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
+        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"),
+        legend.title = element_text(size = 16, face = 'bold'))
 #
 #
 common_words_together_clean %>%
@@ -462,10 +468,12 @@ common_words_together_clean %>%
   coord_flip() +
   labs(x = "Unique Words",
        y = "Frequency",
+       caption = 'Data Source: Twitter (derived using rtweet)',
        title = "Count of unique common words") + 
   theme(axis.text = element_text(size = 16, color = "black"), 
         axis.title = element_text(size = 16, color = "black"),
-        title = element_text(size = 18))
+        title = element_text(size = 18),
+        plot.caption = element_text(size = 11, face = "italic"))
 #
 ##
 ########################################
@@ -487,7 +495,7 @@ head(hash_gym_tweets_clean_2)
 #
 #check color paletes
 display.brewer.all()
-
+#
 with(hash_homeworkout_tweets_clean_2, 
      wordcloud(word, freq, 
                min.freq = 1, 
@@ -498,13 +506,12 @@ with(hash_homeworkout_tweets_clean_2,
   title(main = "Wordcloud for Tweets containing #homeworkout", 
         cex.main = 2)
 
-wordcloud2(hash_homeworkout_tweets_clean_2)
-wordcloud2(hash_gym_tweets_clean_2)
+
+# #homeworkout
+wordcloud2(hash_homeworkout_tweets_clean_2, size = 1.5, shape = 'star', color = 'random-dark')
+# #gym
+wordcloud2(hash_gym_tweets_clean_2, size = 1.5, shape = 'diamond', color = 'random-light')
 #####################################################
-#
-###
-### Sentiment analysis
-###
 #
 #
 #
@@ -528,12 +535,16 @@ bing_home_word_counts %>%
   geom_col(show.legend = FALSE) +
   coord_flip() +
   facet_wrap(~sentiment, scales = "free_y") +
-  labs(title = "Most common Positive and Negative words in tweets on #homeworkout",
+  labs(title = "Most common Positive and Negative words\nin tweets on #homeworkout",
+       caption = 'Data Source: Twitter (derived using rtweet)',
        y = "Sentiment",
        x = NULL) +
   theme(axis.text = element_text(size = 14, color = "black"), 
         axis.title = element_text(size = 14, color = "black"),
-        title = element_text(size = 15))
+        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"))
+
+
 #
 #
 bing_gym_word_counts %>%
@@ -545,40 +556,44 @@ bing_gym_word_counts %>%
   coord_flip() +
   facet_wrap(~sentiment, scales = "free_y") +
   labs(title = "Most common Positive and Negative words in tweets on #gym",
+       caption = 'Data Source: Twitter (derived using rtweet)',
        y = "Sentiment",
        x = NULL) +
   theme(axis.text = element_text(size = 14, color = "black"), 
         axis.title = element_text(size = 14, color = "black"),
-        title = element_text(size = 15))
+        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"))
 #
+# in order to plot them together, they should be in the same dataframe
 bing_home_word_counts_m <-bing_home_word_counts %>%
-                            mutate(hash = 'homeworkout')
-bing_home_word_counts_m
+                          mutate(hash = '#homeworkout')
 #
 bing_gym_word_counts_m <- bing_gym_word_counts %>%
-                            mutate(hash = 'gym')
+                            mutate(hash = '#gym')
 #
-#added together
+# bind together
 #
 bing_together <- rbind(bing_home_word_counts_m, bing_gym_word_counts_m)
-bing_together
 #
 bing_together %>%
-  group_by(sentiment) %>%
-  slice_max(n, n = 10, with_ties = FALSE) %>%
-  ungroup() %>%
+  group_by(sentiment, hash) %>%
+  arrange(desc(n)) %>%
+  slice_head(n = 5) %>%
   ggplot(aes(word, n, fill = sentiment)) +
   geom_col(show.legend = FALSE) +
   coord_flip() +
-  facet_wrap(hash~sentiment, scales = "free_y") +
-  labs(title = "Most common Positive and Negative words in tweets on #homeworkout vs #gym",
+  labs(title = "Most common Positive and Negative words\nin tweets on #homeworkout vs #gym",
+       caption = 'Data Source: Twitter (derived using rtweet)',
        y = "Sentiment",
        x = NULL) +
-  theme(axis.text = element_text(size = 14, color = "black"), 
-        axis.title = element_text(size = 14, color = "black"),
-        title = element_text(size = 15))
-#
-#, scales = "free_y"
+  theme(axis.text = element_text(size = 16, color = "black"),
+        axis.title = element_text(size = 16, color = "black"),
+        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"),
+        legend.title = element_text(size = 16, face = 'bold')) +
+  facet_wrap(hash ~ sentiment, scales = 'free_y') +
+  scale_fill_manual(values = c("positive" = "blue", 
+                             "negative" = "red"))
 #
 #
 #############################################
