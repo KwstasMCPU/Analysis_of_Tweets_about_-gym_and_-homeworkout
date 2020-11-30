@@ -173,7 +173,8 @@ binded_tweets_r %>%
   coord_flip() +
   labs(x = "Top Locations",
        y = "Frequency",
-       title = "Top locations of #gym and #homeworkout",
+       fill = "Tweets",
+       title = "Top locations of #gym and #homeworkout tweets",
        caption = 'Data Source: Twitter (derived using rtweet)') +
   theme(axis.text = element_text(size = 16, color = "black"),
         axis.title = element_text(size = 16, color = "black"),
@@ -422,8 +423,7 @@ binded_clean %>%
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
   facet_grid(topic~., scales ='free') 
-
-
+#
 hash_homeworkout_tweets_clean %>%
   count(word, sort = TRUE) %>% # count of number of occurrences of each word and sort according to count
   head(10) %>% # extract top 10 words
@@ -437,7 +437,6 @@ hash_homeworkout_tweets_clean %>%
   theme(axis.text = element_text(size = 16, color = "black"), 
         axis.title = element_text(size = 16, color = "black"),
         title = element_text(size = 18))
-#
 #
 hash_gym_tweets_clean %>%
   count(word, sort = TRUE) %>% # count of number of occurrences of each word and sort according to count
