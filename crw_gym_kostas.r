@@ -73,7 +73,8 @@ plot_top_users <- function(x, title_end = ' ', fill = "blue") {x %>%
     coord_flip() +
     labs(x = "Twitter userss",
          y = "Number of tweets per user.",
-         title = paste("Who tweeted the most about", title_end, sep = ' ')) + 
+         title = paste("Who tweeted the most about", title_end, sep = ' '),
+         caption = 'Data Source: Twitter (derived using rtweet)') + 
     theme(axis.text = element_text(size = 16, color = "black"), 
           axis.title = element_text(size = 16, color = "black"),
           title = element_text(size = 18))
@@ -91,7 +92,8 @@ plot_top_locations <- function(x, title_end = ' ', fill = 'blue') {x %>%
     coord_flip() +
     labs(x = "Location",
          y = "Number of tweets",
-         title = paste("Top locations which tweeted:", title_end, sep = ' ')) + 
+         title = paste("Top locations which tweeted:", title_end, sep = ' '),
+         caption = 'Data Source: Twitter (derived using rtweet)') + 
     theme(axis.text = element_text(size = 16, color = "black"), 
           axis.title = element_text(size = 16, color = "black"),
           title = element_text(size = 18))
@@ -510,7 +512,8 @@ with(hash_homeworkout_tweets_clean_2,
 # #homeworkout
 wordcloud2(hash_homeworkout_tweets_clean_2, size = 1.5, shape = 'star', color = 'random-dark')
 # #gym
-wordcloud2(hash_gym_tweets_clean_2, size = 1.5, shape = 'diamond', color = 'random-light')
+wordcloud2(hash_gym_tweets_clean_2, size = 1.5, shape = 'diamond', color = 'random-light') +
+labs(title)
 #####################################################
 #
 #
@@ -615,11 +618,14 @@ sentiment_score <- function(x){ x %>%
 }
 #
 #
+hash_homeworkout_tweets_clean
 homeworkout_sentiment <- sentiment_score(hash_homeworkout_tweets_clean)
 head(homeworkout_sentiment)
 homeworkout_sentiment %>% count(score)
 #
 gym_sentiment <- sentiment_score(hash_gym_tweets_clean)
+
+
 head(homeworkout_sentiment)
 
 gym_sentiment %>% count(score)
@@ -647,6 +653,7 @@ gym_sentiment_mean
 sentiments_bind <- rbind(homeworkout_sentiment, gym_sentiment)
 #
 #
+homeworkout_sentiment
 # Work out the means for each topic
 # so that these can be added to the graph for each topic
 # as a line and as a numerical value
@@ -658,10 +665,12 @@ sentiment_means_both
 #
 # Perform the plot
 #
+sentiments_bind
 ggplot(sentiments_bind, 
        aes(x = score, # Sentiment score on x-axis
            fill = topic)) + # Fill bars with a colour according to the topic
   geom_bar() + # geom_bar will do the tabulation for you :-)
+  
   geom_vline(aes(xintercept = mean_score), 
              data = sentiment_means_both) +
   # Add a vertical line at the mean scores, calculated and stored in sentiment_mean_both above
@@ -680,14 +689,15 @@ ggplot(sentiments_bind,
        fill = "Tweet",
        title = "Distribution of sentiment scores for #homeworkout and #gym",
        caption = 'Data Source: Twitter (derived using rtweet)') +
-  facet_grid(topic ~ .) + # One row for each page
-  theme(legend.position = "bottom",  # Legend on the bottom
+  facet_grid(topic ~ .) +
+  theme(legend.position = "bottom",  
         legend.text = element_text(size = 11),
         axis.text = element_text(size = 16, color = "black"),
         axis.title = element_text(size = 16, color = "black"),
         plot.title = element_text(size = 17, hjust = 0, face = 'bold'),
         plot.caption = element_text(size = 11, face = "italic"),
         legend.title = element_text(size = 16, face = 'bold'))
+  
 #
 # 
 # summary statistics
@@ -699,7 +709,7 @@ sentiments_bind %>%
             variance_score = var(score),
             sd_score = sd(score),
             IQR_score = IQR(score))
-
+         
 
 # when the two groups of samples (A and B), being compared, 
 # are normally distributed. This can be checked using Shapiro-Wilk test.
@@ -722,5 +732,37 @@ ggplot(sentiments_bind, aes(x = topic, y = score, fill = topic)) +
         plot.caption = element_text(size = 11, face = "italic"),
         legend.title = element_text(size = 16, face = 'bold'))
 
-t.test(score ~ topic, data = sentiments_bind, var.equal = TRUE)
-t.test(score ~ topic, data = sentiments_bind, var.equal = TRUE)$p.value
+# t-test follows some assumptions:
+# scale of measurement,   # yes
+# simple random sampling, # not all users are the same expresful, and also not all the gym/homworkout users use twitter
+# normality of data distribution, # check with the shapiro.test
+# adequacy of sample size # yes more than 1000 tweets
+# equality of variance in standard deviation. 
+#
+# histograms
+ggplot(sentiments_bind, aes(x = score, fill = topic))+
+  geom_histogram(position="identity", bins = 12)+
+  geom_vline(aes(xintercept = mean_score), 
+             data = sentiment_means_both) +
+  facet_grid(topic ~ .)
+
+hist(homeworkout_sentiment$score)
+hist(gym_sentiment$score)
+
+# shapirto-wilk's method
+# null hypothesis of these tests is that "sample distribution is normal". 
+# If the test is significant, the distribution is non-normal.
+
+# H0 = distribution is normal / H1 = distribution is not normal
+shapiro.test(homeworkout_sentiment$score)
+# p-value < 0.05, the distribution is not normal
+shapiro.test(gym_sentiment$score)
+# p-value < 0.05, the distribution is not normal
+#
+# Since the distribution is not normal we should use the  Mann-Whitney-Wilcoxon test.
+# H0, the distributions of both populations are equal
+# H1 is that the distributions are not equal.
+wilcox.test(score ~ topic, data=sentiments_bind)
+# p-value > 0.05 
+# At .05 significance level, we conclude that the distributions of both populations are equal
+#
