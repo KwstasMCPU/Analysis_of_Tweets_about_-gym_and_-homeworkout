@@ -37,7 +37,7 @@ hash_gym_tweets <- stream_in(file("hash_gym_tweets.json"))
 #
 ```
 
-```{r, echo=FALSE}
+```{r function_chunk, include=FALSE}
 #
 #creating functions
 #
@@ -100,8 +100,63 @@ hash_homeworkout_tweets_recoded <- join_similar_locations(hash_homeworkout_tweet
 hash_gym_tweets_recoded <- join_similar_locations(hash_gym_tweets)
 ```
 ## TOP LOCATIONS
-```{r, echo=FALSE}
+```{r top_location_home, echo=FALSE, eval=FALSE}
 # 
 # Visuals for #homeworkout
+# we did not included those graphs in the final presentation since we have the grid graph illustrating both
 plot_top_locations(hash_homeworkout_tweets_recoded, '#homeworkout', "tomato")
+```
+
+```{r top_location_gym, echo=FALSE, eval=FALSE}
+#
+# visuals for #gym
+plot_top_locations(hash_gym_tweets_recoded, '#gym', "steelblue")
+```
+
+```{r top_locations_facet_grid, echo=FALSE}
+#
+# we bind the "hash_homeworkout_tweets" and "hash_gym_tweets" in order to create a facet_grid
+#
+# firstly we use mutate in order to create a column called tweet so we can 
+# group_by them using their particular value (#homeworktout and #gym)
+#
+hash_homeworkout_tweets_m <- hash_homeworkout_tweets_recoded %>%
+  mutate(tweet = '#homeworkout')
+#
+hash_gym_tweets_m <- hash_gym_tweets_recoded %>%
+  mutate(tweet = '#gym')
+#
+# use rbind() to bind the together
+#
+binded_tweets <- rbind(hash_homeworkout_tweets_m, hash_gym_tweets_m)
+#
+# use the join_similar_locations function we made
+#
+binded_tweets_r <- join_similar_locations(binded_tweets)
+#
+# visual
+#
+binded_tweets_r %>%
+  select(tweet, location_rec) %>% # just selecting the columns we need
+  group_by(tweet) %>%
+  count(location_rec) %>%
+  na.omit() %>%
+  arrange(desc(n)) %>%  # we faced a problem using head() with the binded data, 
+  slice_head(n = 5) %>% # so instead we used arrange(desc) to sort the data, and then slice_head(5) to pick the first 5 results
+  ggplot(aes(x = location_rec,y = n, fill = tweet)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Top Locations",
+       y = "Frequency",
+       fill = "Tweets",
+       title = "Top locations of #gym and #homeworkout tweets",
+       caption = 'Data Source: Twitter (derived using rtweet)') +
+  theme(axis.text = element_text(size = 16, color = "black"),
+        axis.title = element_text(size = 16, color = "black"),
+        plot.title = element_text(size = 18, face = 'bold'),
+        legend.title = element_text(size = 16, face = 'bold'),
+        plot.caption = element_text(size = 11, face = 'italic')) +
+  scale_fill_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue")) +
+  facet_grid(tweet~ ., scales ='free')
 ```
