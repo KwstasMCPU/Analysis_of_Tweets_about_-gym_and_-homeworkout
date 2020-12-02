@@ -1,0 +1,107 @@
+---
+title: "MATH513\nBig Data and Social Network Visualization\nPractical #Homeworkout vs #Gym"
+author: '10546918'
+date: "`r Sys.Date()`"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, echo=FALSE, include=FALSE,}
+# loading libraries
+library(rtweet)
+library(ggplot2)
+library(dplyr)
+library(ggthemes)
+library(readr)
+library(jsonlite)
+library(tidytext)
+library(wordcloud)
+library(wordcloud2)
+library(tidyr)
+library(maps)
+library(scales)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+#
+#setting the working directory
+setwd("C:/Users/kwsta/master_projects/Math513/CRW_presentation")
+#
+# makes a dataframe out of a json file
+# read the data from the .json files
+hash_homeworkout_tweets <- stream_in(file("hash_homeworkout_tweets.json"))
+hash_gym_tweets <- stream_in(file("hash_gym_tweets.json"))
+#
+```
+
+```{r, echo=FALSE}
+#
+#creating functions
+#
+# Top locations
+# 
+plot_top_locations <- function(x, title_end = ' ', fill = 'blue') {x %>%
+    count(location_rec, sort = TRUE) %>%
+    mutate(location_rec = reorder(location_rec, n)) %>%
+    na.omit() %>%
+    head(10) %>%
+    ggplot(aes(x = location_rec, y = n))+
+    geom_col(fill = fill ) +
+    coord_flip() +
+    labs(x = "Location",
+         y = "Number of tweets",
+         title = paste("Top locations which tweeted:", title_end, sep = ' '),
+         caption = 'Data Source: Twitter (derived using rtweet)') + 
+    theme(axis.text = element_text(size = 16, color = "black"), 
+          axis.title = element_text(size = 16, color = "black"),
+          plot.title = element_text(size = 18, face = 'bold'),
+          plot.caption = element_text(size = 11, face = 'italic'))
+    }
+#  
+# Joining similar locations
+#
+join_similar_locations <- function(x){x %>%
+    mutate(location_rec = 
+             recode(location, 'United States' = 'USA', 
+                    'US' = 'USA', 'Chicago' = 'Chicago, IL', 
+                    "London, England" = "London", 
+                    "London, UK" = "London", 
+                    "South East, England" = 'United Kingdom',
+                    "UK" = "United Kingdom", "u.k." = "United Kingdom",
+                    "United Kingdom, EU" = "United Kingdom",
+                    "England, United Kingdom" = "United Kingdom",
+                    "united kingdom" = "United Kingdom",
+                    "EU" = "European Union"
+                    )
+           )
+  
+    }
+```
+
+```{r, echo=FALSE}
+#
+# Cleaning data
+#
+# dealing with blank locations
+#
+hash_homeworkout_tweets$location[hash_homeworkout_tweets$location==""] <- NA
+hash_gym_tweets$location[hash_gym_tweets$location==""] <- NA
+#
+# A location named "Nothing just happens." spotted. We clean it up since is not meaningful
+#
+hash_gym_tweets$location[hash_gym_tweets$location=="Nothing just happens."] <- NA
+#
+# Joining the similar locations with the join_similar_locations function we made previously
+#
+hash_homeworkout_tweets_recoded <- join_similar_locations(hash_homeworkout_tweets)
+hash_gym_tweets_recoded <- join_similar_locations(hash_gym_tweets)
+```
+## TOP LOCATIONS
+```{r, echo=FALSE}
+# 
+# Visuals for #homeworkout
+plot_top_locations(hash_homeworkout_tweets_recoded, '#homeworkout', "tomato")
+```

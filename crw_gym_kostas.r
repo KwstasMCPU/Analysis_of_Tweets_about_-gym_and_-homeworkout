@@ -77,7 +77,8 @@ plot_top_users <- function(x, title_end = ' ', fill = "blue") {x %>%
          caption = 'Data Source: Twitter (derived using rtweet)') + 
     theme(axis.text = element_text(size = 16, color = "black"), 
           axis.title = element_text(size = 16, color = "black"),
-          title = element_text(size = 18))
+          plot.title = element_text(size = 18, face = 'bold'),
+          plot.caption = element_text(size = 11, face = 'italic'))
   }
 #  
 # Top locations
@@ -96,7 +97,8 @@ plot_top_locations <- function(x, title_end = ' ', fill = 'blue') {x %>%
          caption = 'Data Source: Twitter (derived using rtweet)') + 
     theme(axis.text = element_text(size = 16, color = "black"), 
           axis.title = element_text(size = 16, color = "black"),
-          title = element_text(size = 18))
+          plot.title = element_text(size = 18, face = 'bold'),
+          plot.caption = element_text(size = 11, face = 'italic'))
     }
 #  
 # joining similar locations
@@ -123,7 +125,7 @@ hash_homeworkout_tweets$location[hash_homeworkout_tweets$location==""] <- NA
 hash_gym_tweets$location[hash_gym_tweets$location==""] <- NA
 # to deal the the "Nothing just happens." location
 hash_gym_tweets$location[hash_gym_tweets$location=="Nothing just happens."] <- NA
-#
+##
 # joining similar locations
 #
 hash_homeworkout_tweets_recoded <- join_similar_locations(hash_homeworkout_tweets)
@@ -280,7 +282,7 @@ world_basemap +
        colour = 'Tweet',
        caption = 'Data Source: Twitter (derived using rtweet)') +
   theme(
-    plot.title = element_text(size=22),
+    plot.title = element_text(size=22, face = 'bold'),
     plot.caption = element_text(size=11, face = 'italic'),
     legend.background = element_rect(colour = "black"),
     legend.title = element_text(size = 14),
@@ -312,31 +314,6 @@ hash_gym_tweets$stripped_text <- gsub("http.*","",  hash_gym_tweets$text)
 hash_gym_tweets$stripped_text <- gsub("https.*","", hash_gym_tweets$stripped_text)
 hash_gym_tweets$stripped_text <- gsub("amp","", hash_gym_tweets$stripped_text)
 #
-# Then, you can clean up your text. If you are trying to create a list of unique words 
-# in your tweets, words with capitalization will be different from words that are all 
-# lowercase. Also you don't need punctuation to be returned as a unique word
-#
-# You can use the unnest_tokens() function in the tidytext package to  
-# clean up your text. When you use this function the following things will be cleaned up 
-# in the text:
-#
-# 1. Convert text to lowercase: each word found in the text will be converted to lowercase 
-# so ensure that you don't get duplicate words due to variation in capitalization.
-# 
-# 2. Punctuation is removed: all instances of periods, commas etc will be removed from your 
-# list of words, and
-#
-# 3. Unique id associated with the tweet: will be added for each occurrence of the word
-#
-# The unnest_tokens() function takes two arguments:
-#  
-# 1) The name of the column where the unique word will be stored and
-# 
-# 2) The column name from the data.frame that you are using that you want to pull unique 
-# words from.
-#
-# In your case, you want to use the stripped_text column which is where you have your 
-# cleaned up tweet text stored.
 #
 # Let's remove punctuation, convert to lowercase, add id for each tweet:
 hash_homeworkout_tweets_clean <- hash_homeworkout_tweets %>%
@@ -645,6 +622,7 @@ sentiment_mean <- function(x){x %>%
 #
 homeworkout_sentiment_mean <- sentiment_mean(homeworkout_sentiment)
 homeworkout_sentiment_mean
+
 #
 gym_sentiment_mean <- sentiment_mean(gym_sentiment)
 gym_sentiment_mean
@@ -733,11 +711,12 @@ ggplot(sentiments_bind, aes(x = topic, y = score, fill = topic)) +
         legend.title = element_text(size = 16, face = 'bold'))
 
 # t-test follows some assumptions:
-# scale of measurement,   # yes
-# simple random sampling, # not all users are the same expresful, and also not all the gym/homworkout users use twitter
-# normality of data distribution, # check with the shapiro.test
-# adequacy of sample size # yes more than 1000 tweets
-# equality of variance in standard deviation. 
+# 1. scale of measurement,   # yes
+# 2. simple random sampling, # not all users are the same expressful (some of them do not post their opinion), 
+# and also not all the gym/homeworkout users use twitter
+# 3. normality of data distribution, # check with the shapiro.test and histogramms (they appear normal or binominal)
+# 4. adequacy of sample size # yes more than 1000 tweets
+# 5. equality of variance in standard deviation. # yes
 #
 # histograms
 ggplot(sentiments_bind, aes(x = score, fill = topic))+
@@ -746,14 +725,20 @@ ggplot(sentiments_bind, aes(x = score, fill = topic))+
              data = sentiment_means_both) +
   facet_grid(topic ~ .)
 
-hist(homeworkout_sentiment$score)
+hist(homeworkout_sentiment$score) 
+par(new=TRUE) 
+plot(density(homeworkout_sentiment$score),
+     yaxt="n", xaxt="n",
+     bty='n', xlab="", ylab="", main='')
+axis(4, las=1)
 hist(gym_sentiment$score)
 
 # shapirto-wilk's method
 # null hypothesis of these tests is that "sample distribution is normal". 
 # If the test is significant, the distribution is non-normal.
 
-# H0 = distribution is normal / H1 = distribution is not normal
+# H0 = distribution is normal
+# H1 = distribution is not normal
 shapiro.test(homeworkout_sentiment$score)
 # p-value < 0.05, the distribution is not normal
 shapiro.test(gym_sentiment$score)
@@ -761,8 +746,8 @@ shapiro.test(gym_sentiment$score)
 #
 # Since the distribution is not normal we should use the  Mann-Whitney-Wilcoxon test.
 # H0, the distributions of both populations are equal
-# H1 is that the distributions are not equal.
+# H1, is that the distributions are not equal.
 wilcox.test(score ~ topic, data=sentiments_bind)
 # p-value > 0.05 
-# At .05 significance level, we conclude that the distributions of both populations are equal
+# At .05 significance level, we conclude that the distributions of both populations are equal, 
 #
