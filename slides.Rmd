@@ -1,8 +1,13 @@
 ---
-title: "MATH513\nBig Data and Social Network Visualization\nPractical #Homeworkout vs #Gym"
+title: |-
+  MATH513
+  Big Data and Social Network Visualization
+  Practical #Homeworkout vs #Gym
 author: '10546918'
 date: "`r Sys.Date()`"
-output: ioslides_presentation
+output:
+  ioslides_presentation: default
+  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -79,6 +84,15 @@ join_similar_locations <- function(x){x %>%
            )
   
     }
+#
+# function for the creation of a data frame with just the tweet texts, usernames and location data
+#
+create_lean_df <- function(df){ data.frame(date_time = df$created_at,
+                                            username = df$screen_name,
+                                            tweet_text = df$text,
+                                            long = df$lng,
+                                            lat = df$lat)
+    }
 ```
 
 ```{r, echo=FALSE}
@@ -113,7 +127,7 @@ plot_top_locations(hash_homeworkout_tweets_recoded, '#homeworkout', "tomato")
 plot_top_locations(hash_gym_tweets_recoded, '#gym', "steelblue")
 ```
 
-```{r top_locations_facet_grid, echo=FALSE}
+```{r top_locations_facet_grid, echo=FALSE, message=FALSE}
 #
 # we bind the "hash_homeworkout_tweets" and "hash_gym_tweets" in order to create a facet_grid
 #
@@ -159,4 +173,88 @@ binded_tweets_r %>%
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
   facet_grid(tweet~ ., scales ='free')
+```
+##WORLD MAP
+```{r worldmap_pre_code, echo = FALSE, message=FALSE}
+# 
+# create variables indicating latitude and longitude using all available 
+# tweet and profile geo-location data
+#
+hash_homeworkout_tweets_map <- lat_lng(hash_homeworkout_tweets)
+hash_gym_tweets_map <- lat_lng(hash_gym_tweets)
+#
+# we create new data frame with just the tweet texts, user-names and location data
+# using the create_lean_df function we made (see "function_chunk" chunk in the beginning of the script)
+#
+hash_homeworkout_tweets_map_s <- create_lean_df(hash_homeworkout_tweets_map)
+#
+hash_gym_tweets_map_s <- create_lean_df(hash_gym_tweets_map)
+#
+# remove na values
+#
+hash_homeworkout_locations  <- hash_homeworkout_tweets_map_s %>%
+  na.omit()
+#
+hash_gym_locations  <- hash_gym_tweets_map_s %>%
+  na.omit()
+#
+# round latitude and longitude and group close tweets
+#
+hash_homeworkout_locations_grp <- hash_homeworkout_locations %>%
+  mutate(long_round = round(long, 2),
+         lat_round = round(lat, 2)) %>%
+  group_by(long_round, lat_round) %>%
+  summarise(total_count = n()) %>%
+  ungroup() 
+#
+hash_gym_locations_grp <- hash_gym_locations %>%
+  mutate(long_round = round(long, 2),
+         lat_round = round(lat, 2)) %>%
+  group_by(long_round, lat_round) %>%
+  summarise(total_count = n()) %>%
+  ungroup() 
+#
+# binding the hash_homeworkout_locations_grp and hash_gym_locations_grp together 
+# so we could plot them easily in the same plot
+#
+hash_homeworkout_locations_grp_m <- hash_homeworkout_locations_grp %>%
+  mutate(tweet = '#homeworkout')
+#
+hash_gym_locations_grp_m <- hash_gym_locations_grp %>%
+  mutate(tweet = '#gym')
+#
+bind_location_grp <- rbind(hash_homeworkout_locations_grp_m, hash_gym_locations_grp_m)
+
+#
+# Plots tweet data about #homeworkout and #gym grouping close tweets and 
+# using larger points to show higher frequency
+#
+# we first have to create a basemap of the globe
+# the theme_map() function cleans up the look of the map
+#
+world_basemap <- ggplot() +
+  borders("world", colour = "gray85", fill = "gray80") +
+  theme_map()
+# 
+# worldmap visual
+#
+world_basemap + 
+  geom_point(data = bind_location_grp,
+             aes(long_round, lat_round, size = total_count, colour = tweet),
+              alpha = 0.4) + 
+  coord_fixed() +
+  labs(title = "Twitter Activity and locations of #homeworkout vs #gym",
+       size = "Number of Tweets",
+       colour = 'Tweet',
+       caption = 'Data Source: Twitter (derived using rtweet)') +
+  theme(
+    plot.title = element_text(size=22, face = 'bold'),
+    plot.caption = element_text(size=11, face = 'italic'),
+    legend.background = element_rect(colour = "black"),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 13),
+    legend.key.size = unit(1, "lines")  
+  ) +
+  scale_color_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue"))
 ```
