@@ -580,3 +580,74 @@ ggplot(sentiments_bind,
         plot.caption = element_text(size = 11, face = "italic"),
         legend.title = element_text(size = 16, face = 'bold'))
 ```
+
+## Summary Statistics
+```{r summary_stats_of_sentient_score, echo=FALSE, message=FALSE, comment=' '}
+#
+library(knitr)
+# summary statistics
+#
+sentiments_stats_table <- sentiments_bind %>%
+        group_by(tweet) %>%
+        summarise(mean_score = mean(score), 
+        variance_score = var(score),
+        sd_score = sd(score),
+        IQR_score = IQR(score))
+
+# we use the kable() function to format our table, aling sets the columns content into center for eatch column ("c"), 
+kable(sentiments_stats_table, 
+      digits = 2, # we limit the amount of decimal digits to 2
+      align = 'ccccc', # we algn each columns content to the center - "c" = center
+      col.names = c("Tweet", "Mean", "Variance", "Sd", "IQR")) # we set our coloumn names
+
+```
+
+## Statistical Test
+```{r visual_inspection_box_plot, echo=FALSE}
+# t-test follows some assumptions:
+# 1. scale of measurement,   # yes
+# 2. simple random sampling, # not all users are the same expressful (some of them do not post their opinion), 
+# and also not all the gym/homeworkout users use twitter, also we included only english tweets
+# 3. normality of data distribution, # check with the shapiro.test and histogramms (gym might be but homeworkout appear bimodal)
+# 4. adequacy of sample size # yes more than 1000 tweets
+# 5. equality of variance in standard deviation. # Variance of #homewkorkout is 2.02 while for gym is 3.11
+
+ggplot(sentiments_bind, aes(x = tweet, y = score, fill = tweet)) + 
+  geom_boxplot(varwidth = TRUE) +
+  labs(title = "Box plots of sentiment scores",
+       x = NULL, 
+       y = "Sentiment Score",
+       fill = 'Tweet',
+       caption = 'Data Source: Twitter (derived using rtweet)') +
+  scale_fill_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue")) +
+  theme(legend.text = element_text(size = 11),
+        axis.text = element_text(size = 16, color = "black"),
+        axis.title = element_text(size = 16, color = "black"),
+        plot.title = element_text(size = 17, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"),
+        legend.title = element_text(size = 16, face = 'bold'))
+```
+
+## shapiro and wicox
+```{r tests, echo=FALSE}
+# shapirto-wilk's method
+# null hypothesis of these tests is that "sample distribution is normal". 
+# If the test is significant, the distribution is non-normal.
+
+# H0 = distribution is normal
+# H1 = distribution is not normal
+shapiro.test(homeworkout_sentiment$score)
+# p-value < 0.05, the distribution is not normal
+shapiro.test(gym_sentiment$score)
+# p-value < 0.05, the distribution is not normal
+#
+# Since the distribution is not normal we should use the  Mann-Whitney-Wilcoxon test.
+# H0, the distributions of both populations are equal
+# H1, is that the distributions are not equal.
+wilcox.test(score ~ tweet, data=sentiments_bind)
+# p-value < 0.05 
+# At .05 significance level, we conclude that the distributions of both populations are not equal, so there is a difference in their medians
+# however we should keep in mind the simple random sampling
+#
+```
