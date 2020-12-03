@@ -25,9 +25,8 @@ my_token <- create_token(
 ###########
 #
 ########## 
-# we filter our search to receive tweets only with English language,  
-# also we excluded the re-tweets in order to minimize bias,
-# since can affect the word count as well as sentimental analysis and the analysis in general
+# we filtered our search to receive tweets only with English language,  
+# also we included r-tweets
 hash_homeworkout_tweets <- search_tweets(q = "#homeworkout",
                         n = 1000, lang = "en", include_rts = TRUE)
 
@@ -100,7 +99,7 @@ plot_top_locations <- function(x, title_end = ' ', fill = 'blue') {x %>%
 # joining similar locations
 join_similar_locations <- function(x){x %>%
     mutate(location_rec = 
-             recode(location, 'United States' = 'USA', 
+             recode(location, 'United States' = 'USA', 'United State' = 'USA',
                     'US' = 'USA', 'Chicago' = 'Chicago, IL', 
                     "London, England" = "London", 
                     "London, UK" = "London", 
@@ -460,7 +459,7 @@ common_words_together_clean %>%
 hash_homeworkout_tweets_clean_2 <- hash_homeworkout_tweets_clean %>%
   count(word, sort = TRUE) %>% 
   mutate(freq = n / sum(n))
-head(hash_homeworkout_tweets_clean_2)
+typeof(hash_homeworkout_tweets_clean_2)
 #
 hash_gym_tweets_clean_2 <- hash_gym_tweets_clean %>%
   count(word, sort = TRUE) %>% 
@@ -485,8 +484,7 @@ with(hash_homeworkout_tweets_clean_2,
 # #homeworkout
 wordcloud2(hash_homeworkout_tweets_clean_2, size = 1.5, shape = 'star', color = 'random-dark')
 # #gym
-wordcloud2(hash_gym_tweets_clean_2, size = 1.5, shape = 'diamond', color = 'random-light') +
-labs(title)
+wordcloud2(hash_gym_tweets_clean_2, size = 1.5, shape = 'diamond', color = 'random-light')
 #####################################################
 #
 #
@@ -521,6 +519,25 @@ bing_home_word_counts %>%
         plot.caption = element_text(size = 11, face = "italic"))
 
 
+plot_bing_words <- function(df, title = '') {df %>%
+    group_by(sentiment) %>%
+    slice_max(n, n = 10, with_ties = FALSE) %>%
+    ungroup() %>%
+    ggplot(aes(word, n, fill = sentiment)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    facet_wrap(~sentiment, scales = "free_y") +
+    labs(title = title,
+         caption = 'Data Source: Twitter (derived using rtweet)',
+         y = "Sentiment",
+         x = NULL) +
+    theme(axis.text = element_text(size = 14, color = "black"), 
+          axis.title = element_text(size = 14, color = "black"),
+          plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+          plot.caption = element_text(size = 11, face = "italic"))
+}
+
+plot_bing_words(bing_home_word_counts, "Most common Positive and Negative words\nin tweets on #homeworkout")
 #
 #
 bing_gym_word_counts %>%
@@ -609,6 +626,7 @@ homeworkout_sentiment <- homeworkout_sentiment %>%
 #
 gym_sentiment <- gym_sentiment %>% 
   mutate(topic = "#gym")
+
 #
 # calculating the score means in order to add them to our plots
 #
@@ -617,7 +635,12 @@ sentiment_mean <- function(x){x %>%
 }
 #
 homeworkout_sentiment_mean <- sentiment_mean(homeworkout_sentiment)
+
 homeworkout_sentiment_mean
+
+
+
+
 
 #
 gym_sentiment_mean <- sentiment_mean(gym_sentiment)
