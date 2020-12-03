@@ -29,16 +29,11 @@ my_token <- create_token(
 # also we excluded the re-tweets in order to minimize bias,
 # since can affect the word count as well as sentimental analysis and the analysis in general
 hash_homeworkout_tweets <- search_tweets(q = "#homeworkout",
-                        n = 1000, lang = "en", include_rts = FALSE)
+                        n = 1000, lang = "en", include_rts = TRUE)
 
 hash_gym_tweets <- search_tweets(q = "#gym",
-                                 n = 1000, lang = "en", include_rts = FALSE)
+                                 n = 1000, lang = "en", include_rts = TRUE)
 
-homeworkout_tweets <- search_tweets(q = "home workout OR homeworkout",
-                                    n = 1000, lang = "en", include_rts = FALSE)
-
-gym_tweets <- search_tweets(q = "gym",
-                            n = 1000, lang = "en", include_rts = FALSE)
 #
 ########## THIS WILL REWRITE THE JSON FILES ########################################
 ## As before, these tweets can be saved for future use, for example, as a json file
@@ -55,8 +50,9 @@ hash_gym_tweets <- stream_in(file("hash_gym_tweets.json"))
 #
 # inspect some tweets
 ####### for hash_homeworkout_tweets##########
-View(hash_homeworkout_tweets)
+length(hash_homeworkout_tweets$screen_name)
 names(hash_homeworkout_tweets)
+head(hash_homeworkout_tweets)
 head(hash_homeworkout_tweets$text)
 head(hash_homeworkout_tweets$screen_name)
 #

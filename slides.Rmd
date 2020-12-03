@@ -8,13 +8,33 @@ date: "`r Sys.Date()`"
 output:
   ioslides_presentation: default
   beamer_presentation: default
+  logo: logo.jpg
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-```{r, echo=FALSE, include=FALSE,}
+```{r twitter_request, eval = FALSE, include = FALSE}
+  # making request to the tweeter API
+my_token <- create_token(
+  app = "KTweeter_analysis_app",
+  consumer_key = "gcwB0SC0FfKAz6YfyTIw3wUGd",
+  consumer_secret = "0HeRgRxBIfVJVxSmjjaJdFZtIs9nMM1lVpVHv2c3mtnOtp0qoG",
+  access_token = "1315266158052990977-uWAIGpx2rlbGPyuICYwmGrj1UtO7Vc",
+  access_secret = "7JVOj6aVqvWy2lC6ehN7VHHrmB5RwFsr0Xopmtd6ABRQO")
+###########
+
+# we filtered our search to receive tweets only with English language,  
+# also we included r-tweets
+hash_homeworkout_tweets <- search_tweets(q = "#homeworkout",
+                        n = 1000, lang = "en", include_rts = TRUE)
+
+hash_gym_tweets <- search_tweets(q = "#gym",
+                                 n = 1000, lang = "en", include_rts = TRUE)
+```
+
+```{r, echo=FALSE, include=FALSE}
 # loading libraries
 library(rtweet)
 library(ggplot2)
@@ -70,7 +90,7 @@ plot_top_locations <- function(x, title_end = ' ', fill = 'blue') {x %>%
 #
 join_similar_locations <- function(x){x %>%
     mutate(location_rec = 
-             recode(location, 'United States' = 'USA', 
+             recode(location, 'United States' = 'USA', 'United State' = 'USA',
                     'US' = 'USA', 'Chicago' = 'Chicago, IL', 
                     "London, England" = "London", 
                     "London, UK" = "London", 
@@ -92,7 +112,27 @@ create_lean_df <- function(df){ data.frame(date_time = df$created_at,
                                             tweet_text = df$text,
                                             long = df$lng,
                                             lat = df$lat)
-    }
+}
+#
+# function for ploting top negative and positive words
+#
+plot_bing_words <- function(df, title = '') {df %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(title = title,
+       caption = 'Data Source: Twitter (derived using rtweet)',
+       y = "Sentiment",
+       x = NULL) +
+  theme(axis.text = element_text(size = 14, color = "black"), 
+        axis.title = element_text(size = 14, color = "black"),
+        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"))
+  }
 ```
 
 ```{r, echo=FALSE}
@@ -118,12 +158,14 @@ hash_gym_tweets_recoded <- join_similar_locations(hash_gym_tweets)
 # 
 # Visuals for #homeworkout
 # we did not included those graphs in the final presentation since we have the grid graph illustrating both
+# there are included here for your reference and check that facet_grid graph work properly
 plot_top_locations(hash_homeworkout_tweets_recoded, '#homeworkout', "tomato")
 ```
 
 ```{r top_location_gym, echo=FALSE, eval=FALSE}
 #
 # visuals for #gym
+# we did not included those graphs in the final presentation since we have the grid graph illustrating both
 plot_top_locations(hash_gym_tweets_recoded, '#gym', "steelblue")
 ```
 
@@ -174,7 +216,8 @@ binded_tweets_r %>%
                                "#gym" = "steelblue")) +
   facet_grid(tweet~ ., scales ='free')
 ```
-##WORLD MAP
+
+## WORLD MAP
 ```{r worldmap_pre_code, echo = FALSE, message=FALSE}
 # 
 # create variables indicating latitude and longitude using all available 
@@ -257,4 +300,201 @@ world_basemap +
   ) +
   scale_color_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue"))
+```
+
+## SENTIMENT ANALYSIS
+```{r data_clean_up, include=FALSE}
+#
+# remove urls
+hash_homeworkout_tweets$stripped_text <- gsub("http.*","",  hash_homeworkout_tweets$text)
+hash_homeworkout_tweets$stripped_text <- gsub("https.*","", hash_homeworkout_tweets$stripped_text)
+hash_homeworkout_tweets$stripped_text <- gsub("amp","", hash_homeworkout_tweets$stripped_text)
+#
+hash_gym_tweets$stripped_text <- gsub("http.*","",  hash_gym_tweets$text)
+hash_gym_tweets$stripped_text <- gsub("https.*","", hash_gym_tweets$stripped_text)
+hash_gym_tweets$stripped_text <- gsub("amp","", hash_gym_tweets$stripped_text)
+#
+# remove punctuation, convert to lowercase, add id for each tweet:
+hash_homeworkout_tweets_clean <- hash_homeworkout_tweets %>%
+  select(stripped_text) %>% 
+  mutate(tweetnumber = row_number()) %>% # creates a new variable denoting the tweet number
+  unnest_tokens(word, stripped_text)
+#
+hash_gym_tweets_clean <- hash_gym_tweets %>%
+  select(stripped_text) %>% 
+  mutate(tweetnumber = row_number()) %>% # creates a new variable denoting the tweet number
+  unnest_tokens(word, stripped_text)
+#
+# common words
+# converting the striped text columns to a dataframe so we can use the rbind()
+# then the colnames() is used to set the same column name in order to bind them together
+#
+df_stripped_text_home <- as.data.frame(hash_homeworkout_tweets$stripped_text)
+colnames(df_stripped_text_home) <- 'text'
+#
+df_stripped_text_gym <- as.data.frame(hash_gym_tweets$stripped_text)
+colnames(df_stripped_text_gym) <- 'text'
+#
+# binding them together
+#
+common_words_together <- rbind(df_stripped_text_home, df_stripped_text_gym)
+#
+common_words_together_clean <- common_words_together %>%
+  select(text) %>% 
+  mutate(tweetnumber = row_number()) %>% # create new variable denoting the tweet number
+  unnest_tokens(word, text)
+head(common_words_together_clean)
+#
+## clean stop words
+data("stop_words")
+#
+my_stop_words <- data.frame(word = c("30","day",'gym','homeworkout', 'home', 'workout')) # the word '30' appears a lot
+#
+hash_homeworkout_tweets_clean  <- hash_homeworkout_tweets_clean %>%
+  anti_join(stop_words)
+#
+hash_homeworkout_tweets_clean  <- hash_homeworkout_tweets_clean %>%
+  anti_join(my_stop_words)
+#
+#
+hash_gym_tweets_clean  <- hash_gym_tweets_clean %>%
+  anti_join(stop_words)
+#
+hash_gym_tweets_clean  <- hash_gym_tweets_clean %>%
+  anti_join(my_stop_words)
+#
+#
+common_words_together_clean <- common_words_together_clean %>%
+  anti_join(stop_words)
+#
+common_words_together_clean <- common_words_together_clean %>%
+  anti_join(my_stop_words)
+```
+
+```{r unique_words_pre_code, include=FALSE}
+# in order to have a common graph for both, we need to bind them together in the same df,
+# first we create a new column with mutate to state their tweet,
+# then we bind them using rbind()
+#
+hash_homeworkout_tweets_clean_m <- hash_homeworkout_tweets_clean %>% 
+  mutate(tweet = "#homeworkout")
+#
+hash_gym_tweets_clean_m <- hash_gym_tweets_clean %>% 
+  mutate(tweet = "#gym")
+#
+binded_clean <- rbind(hash_homeworkout_tweets_clean_m, hash_gym_tweets_clean_m)
+```
+
+```{r unique_words_graph, echo=FALSE}
+binded_clean %>%
+  group_by(tweet) %>%
+  count(word) %>%
+  arrange(desc(n)) %>%
+  slice_head(n = 10) %>%
+  ggplot(aes(x = word, y = n, fill = tweet)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Unique Words",
+       y = "Frequency",
+       fill = 'Tweet',
+       caption = 'Data Source: Twitter (derived using rtweet)',
+       title = "Count of unique words found in tweets with\n#homeworkout and #gym") + 
+  theme(axis.text = element_text(size = 16, color = "black"),
+        axis.title = element_text(size = 16, color = "black"),
+        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"),
+        legend.title = element_text(size = 16, face = 'bold')) +
+  scale_fill_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue")) +
+  facet_grid(tweet~., scales ='free') 
+```
+
+## world cloud #homeworkout
+```{r world_clouds_pre, include=FALSE}
+#
+# we calculate the appearance of each word and calculate their frequency
+#
+hash_homeworkout_tweets_clean_2 <- hash_homeworkout_tweets_clean %>%
+  count(word, sort = TRUE) %>% 
+  mutate(freq = n / sum(n))
+#
+hash_gym_tweets_clean_2 <- hash_gym_tweets_clean %>%
+  count(word, sort = TRUE) %>% 
+  mutate(freq = n / sum(n))
+#
+```
+
+```{r world_cloud_#homeworkout, echo = FALSE}
+wordcloud2(hash_homeworkout_tweets_clean_2, size = 1.5, shape = 'star', color = 'random-dark')
+```
+
+## World cloud #gym
+```{r world_cloud_#gym, echo = FALSE}
+wordcloud2(hash_gym_tweets_clean_2, size = 1.5)
+```
+## Top negative and positive words
+```{r top_positive_negative_words_prep, include=FALSE}
+#
+bing_home_word_counts <- hash_homeworkout_tweets_clean %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  mutate(word = reorder(word, n))
+#
+bing_gym_word_counts <- hash_gym_tweets_clean %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  mutate(word = reorder(word, n))
+#
+# in order to plot them together, they should be in the same dataframe
+#
+bing_home_word_counts_m <-bing_home_word_counts %>%
+                          mutate(hash = '#homeworkout')
+#
+bing_gym_word_counts_m <- bing_gym_word_counts %>%
+                            mutate(hash = '#gym')
+#
+# rbind() together
+#
+bing_together <- rbind(bing_home_word_counts_m, bing_gym_word_counts_m)
+```
+
+```{r plot_top_positive_negative_words, echo=FALSE}
+#
+# plot top words
+#
+bing_together %>%
+  group_by(sentiment, hash) %>%
+  arrange(desc(n)) %>%
+  slice_head(n = 5) %>%
+  ggplot(aes(word, n, fill = sentiment, color = hash)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  labs(title = "Most common Positive and Negative words\nin tweets on #homeworkout vs #gym",
+       caption = 'Data Source: Twitter (derived using rtweet)',
+       y = "Sentiment score",
+       x = NULL ) +
+  theme(axis.text = element_text(size = 16, color = "black"),
+        axis.title = element_text(size = 16, color = "black"),
+        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"),
+        legend.title = element_text(size = 16, face = 'bold')) +
+  facet_wrap(hash ~ sentiment, scales = 'free_y') +
+  scale_fill_manual(values = c("positive" = "blue", 
+                             "negative" = "red",
+                             "#gym" = "bluesteel",
+                             "#homeworkout" = "tomato"))
+```
+
+```{r plot_home, eval=FALSE, include=FALSE}
+#
+# we did not included those graphs in the final presentation since we have the grid graph illustrating both
+# there are included here for your reference
+plot_bing_words(bing_home_word_counts, "Most common Positive and Negative words\nin tweets on #homeworkout")
+```
+
+```{r plot_gym, eval=FALSE, include=FALSE}
+#
+# we did not included those graphs in the final presentation since we have the grid graph illustrating both
+# there are included here for your reference
+plot_bing_words(bing_gym_word_counts, "Most common Positive and Negative words in tweets on #gym")
 ```
