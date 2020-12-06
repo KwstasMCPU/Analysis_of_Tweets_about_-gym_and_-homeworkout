@@ -413,12 +413,11 @@ binded_clean %>%
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
   facet_grid(tweet~., scales ='free') 
-binded_clean %>% group_by(tweet) %>%count(word) %>% arrange(desc(n))
 ```
 
-```{r,  eval = FALSE, include = FALSE}}
+```{r,  eval = FALSE, include = FALSE, message=FALSE}
 # we did not used this because we had already many plots
-#common words
+# common words
 # converting the striped text columns to a dataframe so we can use the rbind()
 # then the colnames() is used to set the same column name in order to bind the together
 # 
@@ -462,7 +461,6 @@ common_words_together_clean %>%
 
 ```
 
-## world cloud homeworkout
 
 ```{r world_clouds_pre, include=FALSE}
 #
@@ -478,17 +476,17 @@ hash_gym_tweets_clean_2 <- hash_gym_tweets_clean %>%
 #
 ```
 
-```{r world_cloud_#homeworkout, echo = FALSE}
+```{r world_cloud_#homeworkout, eval=FALSE, include=FALSE}
+# we did not used the worldclouds since we have the bar-charts which are more illustrative
 wordcloud2(hash_homeworkout_tweets_clean_2, size = 1.5, shape = 'star', color = 'random-dark')
 ```
 
-## World cloud gym
 
-```{r world_cloud_#gym, echo = FALSE}
+```{r world_cloud_#gym, eval =FALSE, include=FALSE}
 wordcloud2(hash_gym_tweets_clean_2, size = 1.5)
 ```
 
-## Top negative and positive words
+## SENTIMENT ANALYSIS
 
 ```{r top_positive_negative_words_prep, include=FALSE}
 #
@@ -543,24 +541,23 @@ bing_together %>%
                              "negative" = "red",
                              "#gym" = "bluesteel",
                              "#homeworkout" = "tomato"))
-bing_together
 ```
 
-```{r plot_home, eval=True, include=True}
+```{r plot_home, eval=FALSE, include=FALSE}
 #
 # we did not included those graphs in the final presentation since we have the grid graph illustrating both
 # there are included here for your reference
 plot_bing_words(bing_home_word_counts, "Most common Positive and Negative words\nin tweets on #homeworkout")
 ```
 
-```{r plot_gym, eval=True, include=True}
+```{r plot_gym, eval=FALSE, include=FALSE}
 #
 # we did not included those graphs in the final presentation since we have the grid graph illustrating both
 # there are included here for your reference
 plot_bing_words(bing_gym_word_counts, "Most common Positive and Negative words\nin tweets on #gym")
 ```
 
-## Sentiment Scores
+## SENTIMENT ANALYSIS
 ```{r calculating_sentiment_scores, echo=FALSE, message=FALSE}
 #
 # using the sentiment_score function we made to create a df with the sentiment score
@@ -631,7 +628,7 @@ ggplot(sentiments_bind,
 
 ```
 
-## Summary Statistics
+## SUMMARY STATISTICS
 ```{r summary_stats_of_sentient_score, echo=FALSE, message=FALSE, comment=' '}
 #
 library(knitr)
@@ -651,15 +648,22 @@ kable(sentiments_stats_table,
 
 ```
 
-## Statistical Test
+## STATISTICAL TESTING
 ```{r density_plots, echo=FALSE}
-# plotting density plots to have a better visualization of our disibutions
+# plotting density plots to have a better visualization of our distributions
+# t-test follows some assumptions:
+# 1. scale of measurement,   # yes
+# 2. simple random sampling, # not all users are the same expressful (some of them do not post their opinion), 
+# and also not all the gym/homeworkout users use twitter, also we included only english tweets
+# 3. normality of data distribution, # check with the shapiro.test and histogramms (gym might be but homeworkout appear bimodal)
+# 4. adequacy of sample size # yes more than 1000 tweets
+# 5. equality of variance in standard deviation. # Variance of #homewkorkout is 2.02 while for gym is 3.11
 h_mean <- as.numeric(homeworkout_sentiment_mean)
 h_median <- as.numeric(homeworkout_sentiment_median)
 g_mean <- as.numeric(gym_sentiment_mean)
 g_median <- as.numeric(gym_sentiment_median)
 
-p1 <- ggplot(sentiments_bind, aes(x=score, color= tweet, fill = tweet))+
+p <- ggplot(sentiments_bind, aes(x=score, color= tweet, fill = tweet))+
   geom_density(alpha = 0.2) +
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
@@ -682,15 +686,8 @@ p + geom_vline(aes(xintercept=h_mean),
 ```
 
 
-```{r visual_inspection_box_plot, echo=FALSE, eval=FALSE}
-# t-test follows some assumptions:
-# 1. scale of measurement,   # yes
-# 2. simple random sampling, # not all users are the same expressful (some of them do not post their opinion), 
-# and also not all the gym/homeworkout users use twitter, also we included only english tweets
-# 3. normality of data distribution, # check with the shapiro.test and histogramms (gym might be but homeworkout appear bimodal)
-# 4. adequacy of sample size # yes more than 1000 tweets
-# 5. equality of variance in standard deviation. # Variance of #homewkorkout is 2.02 while for gym is 3.11
-
+```{r visual_inspection_box_plot, echo=FALSE, eval=FALSE, include=FALSE}
+# we decided not to include the boxplot since we included the density plots, and due to time constraints as well
 ggplot(sentiments_bind, aes(x = tweet, y = score, fill = tweet)) + 
   geom_boxplot(varwidth = TRUE) +
   labs(title = "Box plots of sentiment scores",
@@ -708,7 +705,8 @@ ggplot(sentiments_bind, aes(x = tweet, y = score, fill = tweet)) +
         legend.title = element_text(size = 16, face = 'bold'))
 ```
 
-## shapiro and wicox
+## STATISTICAL TESTING
+# NORMALITY TEST AND MANN–WHITNEY U TEST
 ```{r tests, echo=FALSE}
 # shapirto-wilk's method
 # null hypothesis of these tests is that "sample distribution is normal". 
