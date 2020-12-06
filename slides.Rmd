@@ -3,7 +3,7 @@ title: |-
   MATH513
   Big Data and Social Network Visualization
   Practical #Homeworkout vs #Gym
-author: '10546918'
+author: '"10576468, ,10546918, Sid ID'
 date: "`r Sys.Date()`"
 output:
   ioslides_presentation: default
@@ -92,7 +92,8 @@ join_similar_locations <- function(x){x %>%
     mutate(location_rec = 
              recode(location, 'United States' = 'USA', 'United State' = 'USA',
                     'US' = 'USA', 'Chicago' = 'Chicago, IL', 
-                    "London, England" = "London", 
+                    "London, England" = "London",
+                    "London,UK" = "London",
                     "London, UK" = "London", 
                     "South East, England" = 'United Kingdom',
                     "UK" = "United Kingdom", "u.k." = "United Kingdom",
@@ -145,8 +146,13 @@ sentiment_score <- function(x){ x %>%
 #
 # function for calculating the sentiment score means
 #
-sentiment_mean <- function(x){x %>%
-    summarise((mean_score = mean(score)))
+sentiment_stats <- function(x){x %>%
+    summarise(mean_score = mean(score),
+              median_score = median(score),
+              variance_score = var(score),
+              sd_score = sd(score),
+              IQR_score = IQR(score)
+              )
 }
 ```
 
@@ -182,6 +188,8 @@ plot_top_locations(hash_homeworkout_tweets_recoded, '#homeworkout', "tomato")
 # visuals for #gym
 # we did not included those graphs in the final presentation since we have the grid graph illustrating both
 plot_top_locations(hash_gym_tweets_recoded, '#gym', "steelblue")
+length(hash_homeworkout_tweets$location[hash_homeworkout_tweets$location==NA])
+length(hash_gym_tweets$location[hash_gym_tweets$location==NA])
 ```
 
 ```{r top_locations_facet_grid, echo=FALSE, message=FALSE}
@@ -218,7 +226,7 @@ binded_tweets_r %>%
   geom_col() +
   coord_flip() +
   labs(x = "Top Locations",
-       y = "Frequency",
+       y = "Number of tweets",
        fill = "Tweets",
        title = "Top locations of #gym and #homeworkout tweets",
        caption = 'Data Source: Twitter (derived using rtweet)') +
@@ -340,30 +348,16 @@ hash_gym_tweets_clean <- hash_gym_tweets %>%
   mutate(tweetnumber = row_number()) %>% # creates a new variable denoting the tweet number
   unnest_tokens(word, stripped_text)
 #
-# common words
-# converting the striped text columns to a dataframe so we can use the rbind()
-# then the colnames() is used to set the same column name in order to bind them together
-#
-df_stripped_text_home <- as.data.frame(hash_homeworkout_tweets$stripped_text)
-colnames(df_stripped_text_home) <- 'text'
-#
-df_stripped_text_gym <- as.data.frame(hash_gym_tweets$stripped_text)
-colnames(df_stripped_text_gym) <- 'text'
-#
-# binding them together
-#
-common_words_together <- rbind(df_stripped_text_home, df_stripped_text_gym)
-#
-common_words_together_clean <- common_words_together %>%
-  select(text) %>% 
-  mutate(tweetnumber = row_number()) %>% # create new variable denoting the tweet number
-  unnest_tokens(word, text)
-head(common_words_together_clean)
-#
 ## clean stop words
 data("stop_words")
 #
-my_stop_words <- data.frame(word = c("30","day",'gym','homeworkout', 'home', 'workout')) # the word '30' appears a lot
+my_stop_words <- data.frame(word = c("day",'gym',
+                                     'homeworkout', 'home', 
+                                     '7','30', # must refer to workout programs who last 7 or 30 days, 
+                                     'workout',
+                                     'calculus', 'assignments' # calculus and assignments apppear a lot in #homeworkout, we assume that they are related to homework
+                                    )
+                            ) 
 #
 hash_homeworkout_tweets_clean  <- hash_homeworkout_tweets_clean %>%
   anti_join(stop_words)
@@ -378,12 +372,7 @@ hash_gym_tweets_clean  <- hash_gym_tweets_clean %>%
 hash_gym_tweets_clean  <- hash_gym_tweets_clean %>%
   anti_join(my_stop_words)
 #
-#
-common_words_together_clean <- common_words_together_clean %>%
-  anti_join(stop_words)
-#
-common_words_together_clean <- common_words_together_clean %>%
-  anti_join(my_stop_words)
+
 ```
 
 ```{r unique_words_pre_code, include=FALSE}
@@ -391,6 +380,8 @@ common_words_together_clean <- common_words_together_clean %>%
 # first we create a new column with mutate to state their tweet,
 # then we bind them using rbind()
 #
+
+
 hash_homeworkout_tweets_clean_m <- hash_homeworkout_tweets_clean %>% 
   mutate(tweet = "#homeworkout")
 #
@@ -422,6 +413,53 @@ binded_clean %>%
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
   facet_grid(tweet~., scales ='free') 
+binded_clean %>% group_by(tweet) %>%count(word) %>% arrange(desc(n))
+```
+
+```{r,  eval = FALSE, include = FALSE}}
+# we did not used this because we had already many plots
+#common words
+# converting the striped text columns to a dataframe so we can use the rbind()
+# then the colnames() is used to set the same column name in order to bind the together
+# 
+df_stripped_text_home <- as.data.frame(hash_homeworkout_tweets$stripped_text)
+colnames(df_stripped_text_home) <- 'text'
+#
+df_stripped_text_gym <- as.data.frame(hash_gym_tweets$stripped_text)
+colnames(df_stripped_text_gym) <- 'text'
+# binding them together
+common_words_together <- rbind(df_stripped_text_home, df_stripped_text_gym)
+#
+# cleaning
+common_words_together_clean <- common_words_together %>%
+  select(text) %>% 
+  mutate(tweetnumber = row_number()) %>% # create new variable denoting the tweet number
+  unnest_tokens(word, text)
+#
+common_words_together_clean <- common_words_together_clean %>%
+  anti_join(stop_words)
+#
+common_words_together_clean <- common_words_together_clean %>%
+  anti_join(my_stop_words)
+#
+#
+# plotting
+common_words_together_clean %>%
+  count(word, sort = TRUE) %>% # count of number of occurrences of each word and sort according to count
+  head(10) %>% # extract top 10 words
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(x = word, y = n)) +
+  geom_col(fill = "pink", color = "red") +
+  coord_flip() +
+  labs(x = "Unique Words",
+       y = "Frequency",
+       caption = 'Data Source: Twitter (derived using rtweet)',
+       title = "Count of unique common words") + 
+  theme(axis.text = element_text(size = 16, color = "black"), 
+        axis.title = element_text(size = 16, color = "black"),
+        title = element_text(size = 18),
+        plot.caption = element_text(size = 11, face = "italic"))
+
 ```
 
 ## world cloud homeworkout
@@ -479,6 +517,9 @@ bing_together <- rbind(bing_home_word_counts_m, bing_gym_word_counts_m)
 
 ```{r plot_top_positive_negative_words, echo=FALSE}
 #
+# # Since "these words" are considered for its literal meaning, we include it in the stopwords
+#
+# bing_together <- data.frame(word = c("funny"))
 # plot top words
 #
 bing_together %>%
@@ -502,20 +543,21 @@ bing_together %>%
                              "negative" = "red",
                              "#gym" = "bluesteel",
                              "#homeworkout" = "tomato"))
+bing_together
 ```
 
-```{r plot_home, eval=FALSE, include=FALSE}
+```{r plot_home, eval=True, include=True}
 #
 # we did not included those graphs in the final presentation since we have the grid graph illustrating both
 # there are included here for your reference
 plot_bing_words(bing_home_word_counts, "Most common Positive and Negative words\nin tweets on #homeworkout")
 ```
 
-```{r plot_gym, eval=FALSE, include=FALSE}
+```{r plot_gym, eval=True, include=True}
 #
 # we did not included those graphs in the final presentation since we have the grid graph illustrating both
 # there are included here for your reference
-plot_bing_words(bing_gym_word_counts, "Most common Positive and Negative words in tweets on #gym")
+plot_bing_words(bing_gym_word_counts, "Most common Positive and Negative words\nin tweets on #gym")
 ```
 
 ## Sentiment Scores
@@ -533,9 +575,12 @@ homeworkout_sentiment <- homeworkout_sentiment %>%
 gym_sentiment <- gym_sentiment %>% 
   mutate(tweet = "#gym")
 #
-# using the sentiment_mean function we made to calculate the mean sentiment scores of #homeworkout and #gym
-homeworkout_sentiment_mean <- sentiment_mean(homeworkout_sentiment)
-gym_sentiment_mean <- sentiment_mean(gym_sentiment)
+# using the sentiment_stats function we made to calculate the mean and median 
+# sentiment scores of #homeworkout and #gym
+homeworkout_sentiment_mean <- sentiment_stats(homeworkout_sentiment)[1]
+homeworkout_sentiment_median <-  sentiment_stats(homeworkout_sentiment)[2]
+gym_sentiment_mean <- sentiment_stats(gym_sentiment)[1]
+gym_sentiment_median <- sentiment_stats(gym_sentiment)[2]
 #
 # Work out the means for each topic
 # so that these can be added to the graph for each topic
@@ -543,9 +588,10 @@ gym_sentiment_mean <- sentiment_mean(gym_sentiment)
 #
 sentiments_bind <- rbind(homeworkout_sentiment, gym_sentiment)
 #
-sentiment_means_both <- sentiments_bind %>% 
+sentiment_stats_both <- sentiments_bind %>% 
   group_by(tweet) %>% 
-  summarize(mean_score = mean(score)) 
+  summarize(mean_score = mean(score),
+            median_score = median(score)) 
 #
 # Perform the plot
 #
@@ -554,13 +600,15 @@ ggplot(sentiments_bind,
            fill = tweet)) + # Fill bars with a color according to the topic
   geom_bar() + # geom_bar will do the tabulation for you :-)
   geom_vline(aes(xintercept = mean_score), 
-             data = sentiment_means_both) +
+             data = sentiment_stats_both) +
   # Add a vertical line at the mean scores, calculated and stored in sentiment_mean_both above
   geom_text(aes(x = mean_score, 
                 y = Inf, 
                 label = signif(mean_score, 3)), #decimal points
             vjust = 2, 
-            data = sentiment_means_both) + 
+            data = sentiment_stats_both) + 
+  geom_vline(aes(xintercept = median_score), 
+             data = sentiment_stats_both) +
   # Add the mean as a number; vjust moves it down from the top of the plot
   scale_x_continuous(breaks = -15:15, 
                      minor_breaks = NULL) + # Show integers; set this to a suitably large range
@@ -579,6 +627,8 @@ ggplot(sentiments_bind,
         plot.title = element_text(size = 17, hjust = 0, face = 'bold'),
         plot.caption = element_text(size = 11, face = "italic"),
         legend.title = element_text(size = 16, face = 'bold'))
+
+
 ```
 
 ## Summary Statistics
@@ -589,16 +639,16 @@ library(knitr)
 #
 sentiments_stats_table <- sentiments_bind %>%
         group_by(tweet) %>%
-        summarise(mean_score = mean(score), 
-        variance_score = var(score),
-        sd_score = sd(score),
-        IQR_score = IQR(score))
+        sentiment_stats()
+sentiments_stats_table
 
-# we use the kable() function to format our table, aling sets the columns content into center for eatch column ("c"), 
-kable(sentiments_stats_table, 
-      digits = 2, # we limit the amount of decimal digits to 2
-      align = 'ccccc', # we algn each columns content to the center - "c" = center
-      col.names = c("Tweet", "Mean", "Variance", "Sd", "IQR")) # we set our coloumn names
+
+
+#we use the kable() function to format our table, aling sets the columns content into center for eatch column ("c"),
+kable(sentiments_stats_table,
+     digits = 2, # we limit the amount of decimal digits to 2
+     align = 'ccccc', # we algn each columns content to the center - "c" = center
+     col.names = c("Tweet", "Mean", "Median", "Variance", "Sd", "IQR")) # we set our coloumn names
 
 ```
 
@@ -637,7 +687,7 @@ ggplot(sentiments_bind, aes(x = tweet, y = score, fill = tweet)) +
 
 # H0 = distribution is normal
 # H1 = distribution is not normal
-shapiro.test(homeworkout_sentiment$score)
+s <- shapiro.test(homeworkout_sentiment$score)
 # p-value < 0.05, the distribution is not normal
 shapiro.test(gym_sentiment$score)
 # p-value < 0.05, the distribution is not normal
