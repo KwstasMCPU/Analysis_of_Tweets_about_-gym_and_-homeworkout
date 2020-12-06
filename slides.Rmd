@@ -7,9 +7,12 @@ author: "10576468, 10546918, 10700016"
 date: "`r Sys.Date()`"
 output:
   ioslides_presentation: default
-  beamer_presentation: default
   logo: logo.jpg
 ---
+
+```{r, echo=FALSE}
+logo <-"logo.jpg"
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
@@ -156,6 +159,90 @@ sentiment_stats <- function(x){x %>%
 }
 ```
 
+## Comparison of Gyms and Home Workouts
+![Image of gym.](gym.jpg){width=150px}  ![Image of home workout.](homeworkout.png){width=250px}
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
+
+## Type of tweets
+```{r, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
+require(jsonlite)
+require(dplyr)
+hash_homeworkout_tweets <- stream_in(file("hash_homeworkout_tweets.json"))
+hash_gym_tweets <- stream_in(file("hash_gym_tweets.json"))
+hash_homeworkout_tweets_m <- hash_homeworkout_tweets %>%
+  mutate(tweet = '#homeworkout')
+
+hash_gym_tweets_m <- hash_gym_tweets%>%
+  mutate(tweet = '#gym')
+
+binded_tweets <- rbind(hash_homeworkout_tweets_m, hash_gym_tweets_m)
+hash_tweets_oraganic<-binded_tweets[binded_tweets$is_retweet==FALSE,]
+
+hash_tweets_oraganic<-subset(hash_tweets_oraganic,is.na(hash_tweets_oraganic$reply_to_status_id))
+hash_tweets_retweet<- binded_tweets[binded_tweets$is_retweet==TRUE,]
+hash_tweets_replies<- subset(binded_tweets,!is.na(binded_tweets$reply_to_status_id))
+
+data<- data.frame(category=c("Oraganic","Retweets","Replies"),count=c(891,439,26))
+
+data$fraction = data$count / sum(data$count)
+data$percentage = signif(data$count /sum(data$count) *  100, 2)
+data$ymax= cumsum(data$fraction)
+data$ymin = c(0, head(data$ymax, n = -1))
+type_of_tweet_gym<- paste(data$category,data$percentage,"%")
+```
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+ggplot(data,aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3,fill=type_of_tweet_gym)) +
+  geom_rect() +
+  coord_polar(theta = "y") +
+  xlim(c(2,4)) +
+  theme_void()+
+  theme(legend.position = "right") +
+  labs(title = "Type of tweet containing #gym") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20))
+```
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
+
+## Tweet Frequency 
+```{r, eval = TRUE, include = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
+require(jsonlite)
+rt_home <- stream_in(file("hash_homeworkout_tweets.json"))
+```
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+require(ggplot2)
+require(rtweet)
+ts_plot(rt_home, "60 mins") +
+  theme_minimal() + 
+  theme(plot.title = element_text(face = "bold"),
+        plot.caption = element_text(size = 11, face = 'italic')) + 
+  labs(
+    x = NULL, y = NULL, 
+    title = "Frequency of #homeworkout Twitter statuses",
+    subtitle = "Twitter status (tweet) counts aggregated using 1-hour intervals",
+    caption = "Source: Data collected from Twitter's REST API via rtweet")
+```
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
+
+## Tweet Frequency 
+```{r, eval = TRUE, include = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
+require(jsonlite)
+rt_gym <- stream_in(file("hash_gym_tweets.json"))
+```
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+require(ggplot2)
+require(rtweet)
+
+ts_plot(rt_gym, "60 mins") +
+  theme_minimal() + 
+  theme(plot.title = element_text(face = "bold"),
+        plot.caption = element_text(size = 11, face = 'italic')) + 
+  labs(
+    x = NULL, y = NULL, 
+    title = "Frequency of #gym Twitter statuses",
+    subtitle = "Twitter status (tweet) counts aggregated using 1-hour intervals",
+    caption = "Source: Data collected from Twitter's REST API via rtweet")
+```
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
+
 ```{r, echo=FALSE}
 #
 # Cleaning data
@@ -174,7 +261,7 @@ hash_gym_tweets$location[hash_gym_tweets$location=="Nothing just happens."] <- N
 hash_homeworkout_tweets_recoded <- join_similar_locations(hash_homeworkout_tweets)
 hash_gym_tweets_recoded <- join_similar_locations(hash_gym_tweets)
 ```
-## TOP LOCATIONS
+## Top locations
 ```{r top_location_home, echo=FALSE, eval=FALSE}
 # 
 # Visuals for #homeworkout
@@ -182,7 +269,6 @@ hash_gym_tweets_recoded <- join_similar_locations(hash_gym_tweets)
 # there are included here for your reference and check that facet_grid graph work properly
 plot_top_locations(hash_homeworkout_tweets_recoded, '#homeworkout', "tomato")
 ```
-
 ```{r top_location_gym, echo=FALSE, eval=FALSE}
 #
 # visuals for #gym
@@ -191,7 +277,6 @@ plot_top_locations(hash_gym_tweets_recoded, '#gym', "steelblue")
 length(hash_homeworkout_tweets$location[hash_homeworkout_tweets$location==NA])
 length(hash_gym_tweets$location[hash_gym_tweets$location==NA])
 ```
-
 ```{r top_locations_facet_grid, echo=FALSE, message=FALSE, size=10}
 #
 # we bind the "hash_homeworkout_tweets" and "hash_gym_tweets" in order to create a facet_grid
@@ -229,7 +314,7 @@ binded_tweets_r %>%
        y = "Number of tweets",
        fill = "Tweets",
        subtitle = "#homework vs #gym Tweets location",
-       caption = 'Data Source: Twitter (derived using rtweet)') +
+       caption = "Source: Data collected from Twitter's REST API via rtweet") +
   theme(axis.text = element_text(size = 16, color = "black"),
         axis.title = element_text(size = 16, color = "black"),
         plot.subtitle = element_text(size= 17, face = 'bold'),
@@ -239,6 +324,7 @@ binded_tweets_r %>%
                                "#gym" = "steelblue")) +
   facet_grid(tweet~ ., scales ='free')
 ```
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
 
 ##
 ```{r worldmap_pre_code, echo = FALSE, message=FALSE}
@@ -324,7 +410,9 @@ world_basemap +
   scale_color_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue"))
 ```
-## SENTIMENT ANALYSIS
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
+
+## Sentiment analysis
 ```{r data_clean_up, include=FALSE}
 #
 # remove urls
@@ -373,7 +461,6 @@ hash_gym_tweets_clean  <- hash_gym_tweets_clean %>%
 #
 
 ```
-
 ```{r unique_words_pre_code, include=FALSE}
 # in order to have a common graph for both, we need to bind them together in the same df,
 # first we create a new column with mutate to state their tweet,
@@ -389,7 +476,6 @@ hash_gym_tweets_clean_m <- hash_gym_tweets_clean %>%
 #
 binded_clean <- rbind(hash_homeworkout_tweets_clean_m, hash_gym_tweets_clean_m)
 ```
-
 ```{r unique_words_graph, echo=FALSE}
 binded_clean %>%
   group_by(tweet) %>%
@@ -413,7 +499,6 @@ binded_clean %>%
                                "#gym" = "steelblue")) +
   facet_grid(tweet~., scales ='free') 
 ```
-
 ```{r,  eval = FALSE, include = FALSE, message=FALSE}
 # we did not used this because we had already many plots
 # common words
@@ -459,8 +544,6 @@ common_words_together_clean %>%
         plot.caption = element_text(size = 11, face = "italic"))
 
 ```
-
-
 ```{r world_clouds_pre, include=FALSE}
 #
 # we calculate the appearance of each word and calculate their frequency
@@ -474,19 +557,16 @@ hash_gym_tweets_clean_2 <- hash_gym_tweets_clean %>%
   mutate(freq = n / sum(n))
 #
 ```
-
 ```{r world_cloud_#homeworkout, eval=FALSE, include=FALSE}
 # we did not used the worldclouds since we have the bar-charts which are more illustrative
 wordcloud2(hash_homeworkout_tweets_clean_2, size = 1.5, shape = 'star', color = 'random-dark')
 ```
-
-
 ```{r world_cloud_#gym, eval =FALSE, include=FALSE}
 wordcloud2(hash_gym_tweets_clean_2, size = 1.5)
 ```
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
 
-## SENTIMENT ANALYSIS
-
+## Sentiment analysis
 ```{r top_positive_negative_words_prep, include=FALSE}
 #
 bing_home_word_counts <- hash_homeworkout_tweets_clean %>%
@@ -511,7 +591,6 @@ bing_gym_word_counts_m <- bing_gym_word_counts %>%
 #
 bing_together <- rbind(bing_home_word_counts_m, bing_gym_word_counts_m)
 ```
-
 ```{r plot_top_positive_negative_words, echo=FALSE}
 #
 # # Since "these words" are considered for its literal meaning, we include it in the stopwords
@@ -523,7 +602,7 @@ bing_together %>%
   group_by(sentiment, hash) %>%
   arrange(desc(n)) %>%
   slice_head(n = 5) %>%
-  ggplot(aes(word, n, fill = sentiment, color = hash)) +
+  ggplot(aes(word, n, fill = sentiment)) +
   geom_col(show.legend = FALSE) +
   coord_flip() +
   labs(title = "Most common Positive and Negative words\nin tweets on #homeworkout vs #gym",
@@ -535,29 +614,26 @@ bing_together %>%
         plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
         plot.caption = element_text(size = 11, face = "italic"),
         legend.title = element_text(size = 16, face = 'bold')) +
-  facet_wrap(hash ~ sentiment, scales = 'free_y') +
-  scale_fill_manual(values = c("postive" = "blue", 
-                             "negative" = "tomato"))+
-  scale_color_manual(values = c("positive"="blue",
-                              "#gym" = "black",
-                             "#homeworkout" = "black"))
-```
+  scale_fill_manual(values = c("positive"="steelblue",
+                              "negative"="tomato"))+
+  facet_wrap(hash ~ sentiment, scales = 'free_y')
 
+```
 ```{r plot_home, eval=FALSE, include=FALSE}
 #
 # we did not included those graphs in the final presentation since we have the grid graph illustrating both
 # there are included here for your reference
 plot_bing_words(bing_home_word_counts, "Most common Positive and Negative words\nin tweets on #homeworkout")
 ```
-
 ```{r plot_gym, eval=FALSE, include=FALSE}
 #
 # we did not included those graphs in the final presentation since we have the grid graph illustrating both
 # there are included here for your reference
 plot_bing_words(bing_gym_word_counts, "Most common Positive and Negative words\nin tweets on #gym")
 ```
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
 
-## SENTIMENT ANALYSIS
+## Sentiment analysis
 ```{r calculating_sentiment_scores, echo=FALSE, message=FALSE}
 #
 # using the sentiment_score function we made to create a df with the sentiment score
@@ -623,11 +699,10 @@ ggplot(sentiments_bind,
         axis.title = element_text(size = 14, color = "black"),
         plot.title = element_text(size = 15, hjust = 0, face = 'bold'),
         plot.caption = element_text(size = 11, face = "italic"))
-
-
 ```
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
 
-## SUMMARY STATISTICS
+## Summary statistics
 ```{r summary_stats_of_sentient_score, echo=FALSE, message=FALSE, comment=' '}
 #
 library(knitr)
@@ -646,8 +721,9 @@ kable(sentiments_stats_table,
      col.names = c("Tweet", "Mean", "Median", "Variance", "Sd", "IQR")) # we set our coloumn names
 
 ```
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
 
-## STATISTICAL TESTING
+## Statistical Testing
 ```{r density_plots, echo=FALSE}
 # plotting density plots to have a better visualization of our distributions
 # t-test follows some assumptions:
@@ -671,7 +747,8 @@ p <- ggplot(sentiments_bind, aes(x=score, color= tweet, fill = tweet))+
   scale_colour_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
    scale_x_continuous(breaks = -15:15, 
-                     minor_breaks = NULL)
+                     minor_breaks = NULL)+
+  theme(plot.title = element_text(size=13, face='bold'))
   
 
 p + geom_vline(aes(xintercept=h_mean),
@@ -686,8 +763,6 @@ p + geom_vline(aes(xintercept=h_mean),
                 label = paste('Mg=',signif(g_mean, 3), sep = ''), color="steelblue")
 
 ```
-
-
 ```{r visual_inspection_box_plot, echo=FALSE, eval=FALSE, include=FALSE}
 # we decided not to include the boxplot since we included the density plots, and due to time constraints as well
 ggplot(sentiments_bind, aes(x = tweet, y = score, fill = tweet)) + 
@@ -706,9 +781,10 @@ ggplot(sentiments_bind, aes(x = tweet, y = score, fill = tweet)) +
         plot.caption = element_text(size = 11, face = "italic"),
         legend.title = element_text(size = 16, face = 'bold'))
 ```
-## STATISTICAL TESTING
-# NORMALITY TEST AND MANN–WHITNEY U TEST
-```{r tests, echo=FALSE}
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
+
+## Statistical Testing
+```{r tests, echo=FALSE, comment=' '}
 # shapirto-wilk's method
 # null hypothesis of these tests is that "sample distribution is normal". 
 # If the test is significant, the distribution is non-normal.
@@ -729,3 +805,5 @@ wilcox.test(score ~ tweet, data=sentiments_bind)
 #The p-value = 3.6 x 10^-6 < 0.5. Therefore, at the 5% significance level, we reject the null hypothesis, and we #conclude that the sentiment scores between tweets with #gym and #homeworkout are significant different.
 #
 ```
+<IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
+
