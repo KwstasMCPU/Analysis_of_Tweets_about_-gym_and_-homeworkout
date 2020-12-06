@@ -640,7 +640,6 @@ library(knitr)
 sentiments_stats_table <- sentiments_bind %>%
         group_by(tweet) %>%
         sentiment_stats()
-sentiments_stats_table
 
 
 
@@ -653,7 +652,37 @@ kable(sentiments_stats_table,
 ```
 
 ## Statistical Test
-```{r visual_inspection_box_plot, echo=FALSE}
+```{r density_plots, echo=FALSE}
+# plotting density plots to have a better visualization of our disibutions
+h_mean <- as.numeric(homeworkout_sentiment_mean)
+h_median <- as.numeric(homeworkout_sentiment_median)
+g_mean <- as.numeric(gym_sentiment_mean)
+g_median <- as.numeric(gym_sentiment_median)
+
+p1 <- ggplot(sentiments_bind, aes(x=score, color= tweet, fill = tweet))+
+  geom_density(alpha = 0.2) +
+  scale_fill_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue")) +
+  scale_colour_manual(values = c("#homeworkout" = "tomato", 
+                               "#gym" = "steelblue")) +
+   scale_x_continuous(breaks = -15:15, 
+                     minor_breaks = NULL)
+
+p + geom_vline(aes(xintercept=h_mean),
+               color="tomato",linetype="dashed", size=0.6) +
+    geom_text(aes(x = h_mean),
+                y = 0.2,
+                label = paste('Mh=',signif(h_mean, 3), sep = ''), color="tomato")+
+    geom_vline(aes(xintercept=g_mean),
+               color="steelblue",linetype="twodash", size=0.6) +
+    geom_text(aes(x = g_mean),
+                y = 0.1,
+                label = paste('Mg=',signif(g_mean, 3), sep = ''), color="steelblue")
+
+```
+
+
+```{r visual_inspection_box_plot, echo=FALSE, eval=FALSE}
 # t-test follows some assumptions:
 # 1. scale of measurement,   # yes
 # 2. simple random sampling, # not all users are the same expressful (some of them do not post their opinion), 
@@ -690,14 +719,14 @@ ggplot(sentiments_bind, aes(x = tweet, y = score, fill = tweet)) +
 s <- shapiro.test(homeworkout_sentiment$score)
 # p-value < 0.05, the distribution is not normal
 shapiro.test(gym_sentiment$score)
+shapiro.test(homeworkout_sentiment$score)
 # p-value < 0.05, the distribution is not normal
 #
 # Since the distribution is not normal we should use the  Mann-Whitney-Wilcoxon test.
 # H0, the distributions of both populations are equal
-# H1, is that the distributions are not equal.
+# H1, is that the mean ranks are not equal.
 wilcox.test(score ~ tweet, data=sentiments_bind)
 # p-value < 0.05 
-# At .05 significance level, we conclude that the distributions of both populations are not equal, so there is a difference in their medians
-# however we should keep in mind the simple random sampling
+#The p-value = 3.6 x 10^-6 < 0.5. Therefore, at the 5% significance level, we reject the null hypothesis, and we #conclude that the sentiment scores between tweets with #gym and #homeworkout are significant different.
 #
 ```
