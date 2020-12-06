@@ -225,14 +225,14 @@ binded_tweets_r %>%
   ggplot(aes(x = location_rec,y = n, fill = tweet)) +
   geom_col() +
   coord_flip() +
-  labs(x = "Top Locations",
+  labs(x = NULL,
        y = "Number of tweets",
        fill = "Tweets",
        subtitle = "#homework vs #gym Tweets location",
        caption = 'Data Source: Twitter (derived using rtweet)') +
   theme(axis.text = element_text(size = 16, color = "black"),
         axis.title = element_text(size = 16, color = "black"),
-        plot.title = element_text(size = 18, face = 'bold'),
+        plot.subtitle = element_text(size= 17, face = 'bold'),
         legend.position = 'none',
         plot.caption = element_text(size = 11, face = 'italic')) +
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
@@ -240,7 +240,7 @@ binded_tweets_r %>%
   facet_grid(tweet~ ., scales ='free')
 ```
 
-## WORLD MAP
+##
 ```{r worldmap_pre_code, echo = FALSE, message=FALSE}
 # 
 # create variables indicating latitude and longitude using all available 
@@ -309,22 +309,21 @@ world_basemap +
              aes(long_round, lat_round, size = total_count, colour = tweet),
               alpha = 0.4) + 
   coord_fixed() +
-  labs(title = "Twitter Activity and locations of #homeworkout vs #gym",
+  labs(title = "Twitter Activity and locations of\n#homeworkout vs #gym",
        size = "Number of Tweets",
        colour = 'Tweet',
        caption = 'Data Source: Twitter (derived using rtweet)') +
   theme(
-    plot.title = element_text(size=22, face = 'bold'),
+    plot.title = element_text(size=18, face = 'bold'),
     plot.caption = element_text(size=11, face = 'italic'),
     legend.background = element_rect(colour = "black"),
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 13),
-    legend.key.size = unit(1, "lines")  
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10),
+    legend.key.size = unit(0.8, "lines")  
   ) +
   scale_color_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue"))
 ```
-
 ## SENTIMENT ANALYSIS
 ```{r data_clean_up, include=FALSE}
 #
@@ -405,11 +404,11 @@ binded_clean %>%
        fill = 'Tweet',
        caption = 'Data Source: Twitter (derived using rtweet)',
        title = "Count of unique words found in tweets with\n#homeworkout and #gym") + 
-  theme(axis.text = element_text(size = 16, color = "black"),
-        axis.title = element_text(size = 16, color = "black"),
-        plot.title = element_text(size = 18, hjust = 0, face = 'bold'),
-        plot.caption = element_text(size = 11, face = "italic"),
-        legend.title = element_text(size = 16, face = 'bold')) +
+  theme(legend.position = 'none',
+        axis.text = element_text(size = 13, color = "black"),
+        axis.title = element_text(size = 14, color = "black"),
+        plot.title = element_text(size = 15, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic")) +
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
   facet_grid(tweet~., scales ='free') 
@@ -537,10 +536,11 @@ bing_together %>%
         plot.caption = element_text(size = 11, face = "italic"),
         legend.title = element_text(size = 16, face = 'bold')) +
   facet_wrap(hash ~ sentiment, scales = 'free_y') +
-  scale_fill_manual(values = c("positive" = "blue", 
-                             "negative" = "red",
-                             "#gym" = "bluesteel",
-                             "#homeworkout" = "tomato"))
+  scale_fill_manual(values = c("postive" = "blue", 
+                             "negative" = "tomato"))+
+  scale_color_manual(values = c("positive"="blue",
+                              "#gym" = "black",
+                             "#homeworkout" = "black"))
 ```
 
 ```{r plot_home, eval=FALSE, include=FALSE}
@@ -602,9 +602,10 @@ ggplot(sentiments_bind,
   geom_text(aes(x = mean_score, 
                 y = Inf, 
                 label = signif(mean_score, 3)), #decimal points
-            vjust = 2, 
+            vjust = 3,
+            hjust = 1,
             data = sentiment_stats_both) + 
-  geom_vline(aes(xintercept = median_score), 
+  geom_vline(aes(xintercept = median_score, linetype="dashed"), 
              data = sentiment_stats_both) +
   # Add the mean as a number; vjust moves it down from the top of the plot
   scale_x_continuous(breaks = -15:15, 
@@ -618,12 +619,10 @@ ggplot(sentiments_bind,
        caption = 'Data Source: Twitter (derived using rtweet)') +
   facet_grid(tweet ~ .) +
   theme(legend.position = "none",  
-        legend.text = element_text(size = 11),
-        axis.text = element_text(size = 16, color = "black"),
-        axis.title = element_text(size = 16, color = "black"),
-        plot.title = element_text(size = 17, hjust = 0, face = 'bold'),
-        plot.caption = element_text(size = 11, face = "italic"),
-        legend.title = element_text(size = 16, face = 'bold'))
+        axis.text = element_text(size = 13, color = "black"),
+        axis.title = element_text(size = 14, color = "black"),
+        plot.title = element_text(size = 15, hjust = 0, face = 'bold'),
+        plot.caption = element_text(size = 11, face = "italic"))
 
 
 ```
@@ -665,12 +664,15 @@ g_median <- as.numeric(gym_sentiment_median)
 
 p <- ggplot(sentiments_bind, aes(x=score, color= tweet, fill = tweet))+
   geom_density(alpha = 0.2) +
+  labs(title = "Density plots of sentiment scores of #homeworkout vs #gym")+
+  
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
   scale_colour_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
    scale_x_continuous(breaks = -15:15, 
                      minor_breaks = NULL)
+  
 
 p + geom_vline(aes(xintercept=h_mean),
                color="tomato",linetype="dashed", size=0.6) +
