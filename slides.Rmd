@@ -3,7 +3,7 @@ title: |-
   MATH513
   Big Data and Social Network Visualization
   Practical #Homeworkout vs #Gym
-author: '"10576468, ,10546918, Sid ID'
+author: "10576468, 10546918, 10700016"
 date: "`r Sys.Date()`"
 output:
   ioslides_presentation: default
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r twitter_request, eval = FALSE, include = FALSE}
-  # making request to the tweeter API
+# making request to the tweeter API
 my_token <- create_token(
   app = "KTweeter_analysis_app",
   consumer_key = "gcwB0SC0FfKAz6YfyTIw3wUGd",
@@ -192,7 +192,7 @@ length(hash_homeworkout_tweets$location[hash_homeworkout_tweets$location==NA])
 length(hash_gym_tweets$location[hash_gym_tweets$location==NA])
 ```
 
-```{r top_locations_facet_grid, echo=FALSE, message=FALSE}
+```{r top_locations_facet_grid, echo=FALSE, message=FALSE, size=10}
 #
 # we bind the "hash_homeworkout_tweets" and "hash_gym_tweets" in order to create a facet_grid
 #
@@ -228,12 +228,12 @@ binded_tweets_r %>%
   labs(x = "Top Locations",
        y = "Number of tweets",
        fill = "Tweets",
-       title = "Top locations of #gym and #homeworkout tweets",
+       subtitle = "#homework vs #gym Tweets location",
        caption = 'Data Source: Twitter (derived using rtweet)') +
   theme(axis.text = element_text(size = 16, color = "black"),
         axis.title = element_text(size = 16, color = "black"),
         plot.title = element_text(size = 18, face = 'bold'),
-        legend.title = element_text(size = 16, face = 'bold'),
+        legend.position = 'none',
         plot.caption = element_text(size = 11, face = 'italic')) +
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
@@ -704,7 +704,6 @@ ggplot(sentiments_bind, aes(x = tweet, y = score, fill = tweet)) +
         plot.caption = element_text(size = 11, face = "italic"),
         legend.title = element_text(size = 16, face = 'bold'))
 ```
-
 ## STATISTICAL TESTING
 # NORMALITY TEST AND MANN–WHITNEY U TEST
 ```{r tests, echo=FALSE}
