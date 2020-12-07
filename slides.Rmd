@@ -167,6 +167,7 @@ sentiment_stats <- function(x){x %>%
 ```{r, echo = FALSE, message = FALSE, warning = FALSE, include = FALSE}
 require(jsonlite)
 require(dplyr)
+
 hash_homeworkout_tweets <- stream_in(file("hash_homeworkout_tweets.json"))
 hash_gym_tweets <- stream_in(file("hash_gym_tweets.json"))
 hash_homeworkout_tweets_m <- hash_homeworkout_tweets %>%
@@ -182,7 +183,11 @@ hash_tweets_oraganic<-subset(hash_tweets_oraganic,is.na(hash_tweets_oraganic$rep
 hash_tweets_retweet<- binded_tweets[binded_tweets$is_retweet==TRUE,]
 hash_tweets_replies<- subset(binded_tweets,!is.na(binded_tweets$reply_to_status_id))
 
-data<- data.frame(category=c("Oraganic","Retweets","Replies"),count=c(891,439,26))
+n_oraganic <- count(hash_tweets_oraganic)
+n_retweets <- count(hash_tweets_retweet)
+n_replies <- count(hash_tweets_replies)
+
+data<- data.frame(category=c("Oraganic","Retweets","Replies"),count=c(as.numeric(n_oraganic), as.numeric(n_retweets), as.numeric(n_replies)))
 
 data$fraction = data$count / sum(data$count)
 data$percentage = signif(data$count /sum(data$count) *  100, 2)
@@ -197,8 +202,8 @@ ggplot(data,aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3,fill=type_of_tweet_gym)) +
   xlim(c(2,4)) +
   theme_void()+
   theme(legend.position = "right") +
-  labs(title = "Type of tweet containing #gym") +
-  theme(plot.title = element_text(hjust = 0.5, size = 20))
+  labs(caption = "Source: Data collected from Twitter's REST API via rtweet") +
+  theme(plot.caption = element_text(size = 11, vjust = 1, face = 'italic'))
 ```
 <IMG style="position:absolute;bottom:2.5%;left:5%;width:100px;height:100;"SRC="`r logo`">
 
@@ -398,7 +403,7 @@ world_basemap +
   labs(title = "Twitter Activity and locations of\n#homeworkout vs #gym",
        size = "Number of Tweets",
        colour = 'Tweet',
-       caption = 'Data Source: Twitter (derived using rtweet)') +
+       caption = "Source: Data collected from Twitter's REST API via rtweet") +
   theme(
     plot.title = element_text(size=18, face = 'bold'),
     plot.caption = element_text(size=11, face = 'italic'),
@@ -488,7 +493,7 @@ binded_clean %>%
   labs(x = "Unique Words",
        y = "Frequency",
        fill = 'Tweet',
-       caption = 'Data Source: Twitter (derived using rtweet)',
+       caption = "Source: Data collected from Twitter's REST API via rtweet",
        title = "Count of unique words found in tweets with\n#homeworkout and #gym") + 
   theme(legend.position = 'none',
         axis.text = element_text(size = 13, color = "black"),
@@ -536,7 +541,7 @@ common_words_together_clean %>%
   coord_flip() +
   labs(x = "Unique Words",
        y = "Frequency",
-       caption = 'Data Source: Twitter (derived using rtweet)',
+       caption = "Source: Data collected from Twitter's REST API via rtweet",
        title = "Count of unique common words") + 
   theme(axis.text = element_text(size = 16, color = "black"), 
         axis.title = element_text(size = 16, color = "black"),
@@ -606,7 +611,7 @@ bing_together %>%
   geom_col(show.legend = FALSE) +
   coord_flip() +
   labs(title = "Most common Positive and Negative words\nin tweets on #homeworkout vs #gym",
-       caption = 'Data Source: Twitter (derived using rtweet)',
+       caption = "Source: Data collected from Twitter's REST API via rtweet",
        y = "Sentiment score",
        x = NULL ) +
   theme(axis.text = element_text(size = 16, color = "black"),
@@ -692,7 +697,7 @@ ggplot(sentiments_bind,
        y = "Number of tweets", 
        fill = "Tweet",
        title = "Distribution of sentiment scores for #homeworkout and #gym",
-       caption = 'Data Source: Twitter (derived using rtweet)') +
+       caption = "Source: Data collected from Twitter's REST API via rtweet") +
   facet_grid(tweet ~ .) +
   theme(legend.position = "none",  
         axis.text = element_text(size = 13, color = "black"),
@@ -740,7 +745,8 @@ g_median <- as.numeric(gym_sentiment_median)
 
 p <- ggplot(sentiments_bind, aes(x=score, color= tweet, fill = tweet))+
   geom_density(alpha = 0.2) +
-  labs(title = "Density plots of sentiment scores of #homeworkout vs #gym")+
+  labs(title = "Density plots of sentiment scores of #homeworkout vs #gym",
+       caption = "Source: Data collected from Twitter's REST API via rtweet")+
   
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
@@ -748,7 +754,8 @@ p <- ggplot(sentiments_bind, aes(x=score, color= tweet, fill = tweet))+
                                "#gym" = "steelblue")) +
    scale_x_continuous(breaks = -15:15, 
                      minor_breaks = NULL)+
-  theme(plot.title = element_text(size=13, face='bold'))
+  theme(plot.title = element_text(size=13, face='bold'),
+        plot.caption = element_text(size=11, face='bold'))
   
 
 p + geom_vline(aes(xintercept=h_mean),
@@ -771,7 +778,7 @@ ggplot(sentiments_bind, aes(x = tweet, y = score, fill = tweet)) +
        x = NULL, 
        y = "Sentiment Score",
        fill = 'Tweet',
-       caption = 'Data Source: Twitter (derived using rtweet)') +
+       caption = "Source: Data collected from Twitter's REST API via rtweet" +
   scale_fill_manual(values = c("#homeworkout" = "tomato", 
                                "#gym" = "steelblue")) +
   theme(legend.text = element_text(size = 11),
