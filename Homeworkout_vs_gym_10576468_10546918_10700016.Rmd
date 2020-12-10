@@ -3,7 +3,7 @@ title: 'MATH513   Big Data and Social Network Visualization   Practical #Homewor
   vs #Gym '
 author: '"10576468, 10546918, 10700016"'
 date: "`r Sys.Date()`" #Returns the current system date.
-output: beamer_presentation
+output: rmarkdown::github_document
 header-includes:
   \usepackage{graphicx}
   \usepackage{fancyhdr}
