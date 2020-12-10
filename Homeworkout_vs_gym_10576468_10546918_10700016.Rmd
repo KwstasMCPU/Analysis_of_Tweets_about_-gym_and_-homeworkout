@@ -1,7 +1,7 @@
 ---
 title: 'MATH513   Big Data and Social Network Visualization   Practical #Homeworkout
   vs #Gym '
-author: '"10576468, 10546918, 10700016"'
+author: '"Victoria Towlson, Siddhartha Koneru, Konstantinos Maravegias"'
 date: "`r Sys.Date()`" #Returns the current system date.
 output: github_document
 header-includes:
@@ -60,7 +60,7 @@ library(scales)
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
 #
 #setting the working directory
-setwd("C:/Users/kwsta/master_projects/Math513/CRW_presentation")
+setwd("path")
 #
 # makes a dataframe out of a json file
 # read the data from the .json files
