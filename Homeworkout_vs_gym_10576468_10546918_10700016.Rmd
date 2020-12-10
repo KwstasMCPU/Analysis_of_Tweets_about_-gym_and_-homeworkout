@@ -3,7 +3,7 @@ title: 'MATH513   Big Data and Social Network Visualization   Practical #Homewor
   vs #Gym '
 author: '"10576468, 10546918, 10700016"'
 date: "`r Sys.Date()`" #Returns the current system date.
-output: rmarkdown::github_document
+output: github_document
 header-includes:
   \usepackage{graphicx}
   \usepackage{fancyhdr}
@@ -60,7 +60,7 @@ library(scales)
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
 #
 #setting the working directory
-setwd("xxxx")
+setwd("C:/Users/kwsta/master_projects/Math513/CRW_presentation")
 #
 # makes a dataframe out of a json file
 # read the data from the .json files
